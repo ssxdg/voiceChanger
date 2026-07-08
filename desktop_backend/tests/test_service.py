@@ -1,6 +1,7 @@
 import unittest
 
 from desktop_backend.device_inventory import build_inventory
+from desktop_backend.environment_status import EnvironmentStatus, ToolStatus
 from desktop_backend.model_catalog import ModelCatalog
 from desktop_backend.service import BackendService, RuntimeState
 
@@ -48,6 +49,7 @@ class BackendServiceTest(unittest.TestCase):
             },
         )
         self.assertEqual(service.models(), {"modelCount": 0, "models": []})
+        self.assertEqual(service.environment()["ffmpeg"]["available"], False)
 
     def test_status_reflects_runtime_state(self):
         service = BackendService(
@@ -75,6 +77,24 @@ class BackendServiceTest(unittest.TestCase):
         service = BackendService(model_catalog_provider=lambda: ModelCatalog([]))
 
         self.assertEqual(service.models(), {"modelCount": 0, "models": []})
+
+    def test_environment_returns_dependency_payload(self):
+        service = BackendService(
+            environment_provider=lambda: EnvironmentStatus(
+                ffmpeg=ToolStatus(available=False, path="", message="未检测到 ffmpeg，请安装 ffmpeg 并加入 PATH")
+            )
+        )
+
+        self.assertEqual(
+            service.environment(),
+            {
+                "ffmpeg": {
+                    "available": False,
+                    "path": "",
+                    "message": "未检测到 ffmpeg，请安装 ffmpeg 并加入 PATH",
+                }
+            },
+        )
 
 
 if __name__ == "__main__":

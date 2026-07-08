@@ -45,6 +45,13 @@ describe('voiceChangerStore', () => {
         },
       }),
       loadModels: async () => ({ modelCount: 0, models: [] }),
+      loadEnvironment: async () => ({
+        ffmpeg: {
+          available: true,
+          path: 'C:/tools/ffmpeg/bin/ffmpeg.exe',
+          message: 'ffmpeg 已就绪',
+        },
+      }),
     }
 
     await useVoiceChangerStore.getState().loadBackendSnapshot(client)
@@ -65,6 +72,13 @@ describe('voiceChangerStore', () => {
         throw new Error('连接本地后端失败')
       },
       loadModels: async () => ({ modelCount: 0, models: [] }),
+      loadEnvironment: async () => ({
+        ffmpeg: {
+          available: true,
+          path: 'C:/tools/ffmpeg/bin/ffmpeg.exe',
+          message: 'ffmpeg 已就绪',
+        },
+      }),
     }
 
     await useVoiceChangerStore.getState().loadBackendSnapshot(client)
@@ -91,6 +105,13 @@ describe('voiceChangerStore', () => {
           },
         ],
       }),
+      loadEnvironment: async () => ({
+        ffmpeg: {
+          available: true,
+          path: 'C:/tools/ffmpeg/bin/ffmpeg.exe',
+          message: 'ffmpeg 已就绪',
+        },
+      }),
     }
 
     await useVoiceChangerStore.getState().loadModels(client)
@@ -99,5 +120,27 @@ describe('voiceChangerStore', () => {
     expect(useVoiceChangerStore.getState().modelItems[0].name).toBe('demo.pth')
     expect(useVoiceChangerStore.getState().modelItems[0].indexReady).toBe(true)
     expect(useVoiceChangerStore.getState().modelListError).toBeNull()
+  })
+
+  it('从后端读取 ffmpeg 环境状态并记录缺失提示', async () => {
+    useVoiceChangerStore.setState(useVoiceChangerStore.getInitialState())
+    const client: BackendClient = {
+      loadSnapshot: async () => {
+        throw new Error('本测试不应读取状态快照')
+      },
+      loadModels: async () => ({ modelCount: 0, models: [] }),
+      loadEnvironment: async () => ({
+        ffmpeg: {
+          available: false,
+          path: '',
+          message: '未检测到 ffmpeg，请安装 ffmpeg 并加入 PATH',
+        },
+      }),
+    }
+
+    await useVoiceChangerStore.getState().loadEnvironment(client)
+
+    expect(useVoiceChangerStore.getState().ffmpegAvailable).toBe(false)
+    expect(useVoiceChangerStore.getState().ffmpegMessage).toBe('未检测到 ffmpeg，请安装 ffmpeg 并加入 PATH')
   })
 })

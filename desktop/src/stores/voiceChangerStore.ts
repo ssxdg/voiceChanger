@@ -17,9 +17,13 @@ type VoiceChangerState = {
   modelItems: BackendModel[]
   modelCount: number
   modelListError: string | null
+  ffmpegAvailable: boolean | null
+  ffmpegMessage: string
+  environmentError: string | null
   toggleRealtime: () => void
   loadBackendSnapshot: (client?: BackendClient) => Promise<void>
   loadModels: (client?: BackendClient) => Promise<void>
+  loadEnvironment: (client?: BackendClient) => Promise<void>
 }
 
 export const useVoiceChangerStore = create<VoiceChangerState>()(
@@ -39,6 +43,9 @@ export const useVoiceChangerStore = create<VoiceChangerState>()(
       modelItems: [],
       modelCount: 0,
       modelListError: null,
+      ffmpegAvailable: null,
+      ffmpegMessage: '等待 ffmpeg 检测',
+      environmentError: null,
       // 使用一个集中 action 切换状态，后续接入后端时只需要在这里串联启动/停止接口。
       toggleRealtime: () => {
         set((state) => ({ isRealtimeActive: !state.isRealtimeActive }))
@@ -83,6 +90,24 @@ export const useVoiceChangerStore = create<VoiceChangerState>()(
             modelItems: [],
             modelCount: 0,
             modelListError: error instanceof Error ? error.message : '读取本地模型列表失败',
+          })
+        }
+      },
+      loadEnvironment: async (client = backendClient) => {
+        try {
+          const environment = await client.loadEnvironment()
+
+          set({
+            ffmpegAvailable: environment.ffmpeg.available,
+            ffmpegMessage: environment.ffmpeg.message,
+            environmentError: null,
+          })
+        } catch (error) {
+          // 依赖检测失败时不阻断控制台，其结果只用于提醒用户修复本地运行环境。
+          set({
+            ffmpegAvailable: false,
+            ffmpegMessage: '无法读取 ffmpeg 状态',
+            environmentError: error instanceof Error ? error.message : '读取运行环境失败',
           })
         }
       },

@@ -35,6 +35,7 @@ class DesktopBackendHandler(BaseHTTPRequestHandler):
             "/status": self.server.service.status,
             "/devices": self.server.service.devices,
             "/models": self.server.service.models,
+            "/environment": self.server.service.environment,
         }
         handler = routes.get(self.path.split("?", 1)[0])
         if handler is None:

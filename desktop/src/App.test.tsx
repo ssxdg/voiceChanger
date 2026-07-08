@@ -32,6 +32,19 @@ beforeEach(() => {
         )
       }
 
+      if (url.endsWith('/environment')) {
+        return new Response(
+          JSON.stringify({
+            ffmpeg: {
+              available: true,
+              path: 'C:/tools/ffmpeg/bin/ffmpeg.exe',
+              message: 'ffmpeg 已就绪',
+            },
+          }),
+          { status: 200 },
+        )
+      }
+
       return new Response(
         JSON.stringify({
           inputDevices: [],
@@ -83,6 +96,19 @@ describe('App', () => {
           return new Response(JSON.stringify({ modelCount: 0, models: [] }), { status: 200 })
         }
 
+        if (url.endsWith('/environment')) {
+          return new Response(
+            JSON.stringify({
+              ffmpeg: {
+                available: true,
+                path: 'C:/tools/ffmpeg/bin/ffmpeg.exe',
+                message: 'ffmpeg 已就绪',
+              },
+            }),
+            { status: 200 },
+          )
+        }
+
         return new Response(
           JSON.stringify({
             inputDevices: ['Microphone Array (MME)'],
@@ -107,6 +133,53 @@ describe('App', () => {
     expect(screen.getByText('请将 .pth 模型放入 assets/weights 后刷新模型列表')).toBeInTheDocument()
   })
 
+  it('控制台展示缺少 ffmpeg 的中文提示', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input)
+        if (url.endsWith('/environment')) {
+          return new Response(
+            JSON.stringify({
+              ffmpeg: {
+                available: false,
+                path: '',
+                message: '未检测到 ffmpeg，请安装 ffmpeg 并加入 PATH',
+              },
+            }),
+            { status: 200 },
+          )
+        }
+
+        if (url.endsWith('/models')) {
+          return new Response(JSON.stringify({ modelCount: 1, models: [] }), { status: 200 })
+        }
+
+        if (url.endsWith('/status')) {
+          return new Response(
+            JSON.stringify({
+              running: false,
+              configured: false,
+              latencyMs: 0,
+              selectedModel: '',
+              lastError: null,
+            }),
+            { status: 200 },
+          )
+        }
+
+        return new Response(JSON.stringify({ inputDevices: [], outputDevices: [], virtualOutputDevices: [] }), {
+          status: 200,
+        })
+      }),
+    )
+
+    render(<App />)
+
+    await waitFor(() => expect(screen.getByText('ffmpeg 未就绪')).toBeInTheDocument())
+    expect(screen.getByText('未检测到 ffmpeg，请安装 ffmpeg 并加入 PATH')).toBeInTheDocument()
+  })
+
   it('在模型管理页展示本地模型列表', async () => {
     vi.stubGlobal(
       'fetch',
@@ -124,6 +197,19 @@ describe('App', () => {
                   indexReady: true,
                 },
               ],
+            }),
+            { status: 200 },
+          )
+        }
+
+        if (url.endsWith('/environment')) {
+          return new Response(
+            JSON.stringify({
+              ffmpeg: {
+                available: true,
+                path: 'C:/tools/ffmpeg/bin/ffmpeg.exe',
+                message: 'ffmpeg 已就绪',
+              },
             }),
             { status: 200 },
           )

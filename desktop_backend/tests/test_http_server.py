@@ -64,6 +64,7 @@ class HttpServerTest(unittest.TestCase):
             },
         )
         self.assertEqual(self._get_json("/models"), {"modelCount": 0, "models": []})
+        self.assertIn("ffmpeg", self._get_json("/environment"))
 
     def test_unknown_path_returns_json_404(self):
         with self.assertRaises(HTTPError) as error:

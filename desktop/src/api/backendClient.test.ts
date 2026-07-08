@@ -69,6 +69,28 @@ describe('backendClient', () => {
     expect(catalog.models[0].indexReady).toBe(true)
   })
 
+  it('读取本地运行环境依赖状态', async () => {
+    const client = createBackendClient('http://127.0.0.1:6242', async (input: RequestInfo | URL) => {
+      expect(String(input)).toBe('http://127.0.0.1:6242/environment')
+
+      return new Response(
+        JSON.stringify({
+          ffmpeg: {
+            available: false,
+            path: '',
+            message: '未检测到 ffmpeg，请安装 ffmpeg 并加入 PATH',
+          },
+        }),
+        { status: 200 },
+      )
+    })
+
+    const environment = await client.loadEnvironment()
+
+    expect(environment.ffmpeg.available).toBe(false)
+    expect(environment.ffmpeg.message).toBe('未检测到 ffmpeg，请安装 ffmpeg 并加入 PATH')
+  })
+
   it('后端返回错误时抛出可展示的中文错误', async () => {
     // 桌面端需要把底层 HTTP 失败转换成中文错误，避免把状态码或英文异常直接暴露给用户。
     const client = createBackendClient('http://127.0.0.1:6242', async () => new Response('', { status: 500 }))

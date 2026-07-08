@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable
 
+from .environment_status import EnvironmentStatus, build_environment_status
 from .model_catalog import ModelCatalog, build_model_catalog
 from .providers import InventoryProvider, unavailable_inventory_provider
 
@@ -28,10 +29,12 @@ class BackendService:
         self,
         inventory_provider: InventoryProvider = unavailable_inventory_provider,
         model_catalog_provider: Callable[[], ModelCatalog] = build_model_catalog,
+        environment_provider: Callable[[], EnvironmentStatus] = build_environment_status,
         state: RuntimeState | None = None,
     ) -> None:
         self._inventory_provider = inventory_provider
         self._model_catalog_provider = model_catalog_provider
+        self._environment_provider = environment_provider
         self._state = state or RuntimeState()
 
     def health(self) -> dict[str, object]:
@@ -58,3 +61,7 @@ class BackendService:
     def models(self) -> dict[str, object]:
         # 模型列表只返回桌面端需要展示的轻量字段，真实加载和删除操作后续再通过单独接口实现。
         return self._model_catalog_provider().as_payload()
+
+    def environment(self) -> dict[str, object]:
+        # 环境检测和运行状态分开暴露，避免 ffmpeg 这类依赖缺失影响状态轮询接口的稳定性。
+        return self._environment_provider().as_payload()

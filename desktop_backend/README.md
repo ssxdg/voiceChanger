@@ -7,8 +7,9 @@
 - 设备清单标准化。
 - 输入设备、输出设备和虚拟输出设备分类。
 - 本地模型列表扫描：`assets/weights/*.pth` 和 `logs/**/*.index`。
-- 桌面端稳定 payload：`health`、`status`、`devices`、`models`。
-- 标准库本地 HTTP 服务入口：`/health`、`/status`、`/devices`、`/models`。
+- ffmpeg 运行环境检测：检查 PATH 中是否存在可用 `ffmpeg`。
+- 桌面端稳定 payload：`health`、`status`、`devices`、`models`、`environment`。
+- 标准库本地 HTTP 服务入口：`/health`、`/status`、`/devices`、`/models`、`/environment`。
 - 无第三方依赖的单元测试。
 
 当前模块尚未完成：

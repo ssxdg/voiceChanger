@@ -32,15 +32,18 @@ function DashboardPage() {
     virtualOutputDeviceOptions,
     modelCount,
     modelListError,
+    ffmpegAvailable,
+    ffmpegMessage,
     toggleRealtime,
     loadBackendSnapshot,
     loadModels,
+    loadEnvironment,
   } = useVoiceChangerStore()
 
   useEffect(() => {
-    // 状态和模型列表互不依赖，并行读取可以让控制台尽快暴露“缺少模型”等阻断提示。
-    void Promise.all([loadBackendSnapshot(), loadModels()])
-  }, [loadBackendSnapshot, loadModels])
+    // 状态、模型和依赖检测互不依赖，并行读取可以让控制台尽快暴露阻断提示。
+    void Promise.all([loadBackendSnapshot(), loadModels(), loadEnvironment()])
+  }, [loadBackendSnapshot, loadEnvironment, loadModels])
 
   const stateMap = {
     selectedModelName,
@@ -82,6 +85,13 @@ function DashboardPage() {
         <section className="missing-model-panel" aria-label="缺少模型提示">
           <strong>未发现本地模型，实时变声暂不可启动</strong>
           <span>请将 .pth 模型放入 assets/weights 后刷新模型列表</span>
+        </section>
+      ) : null}
+
+      {ffmpegAvailable === false ? (
+        <section className="dependency-alert" aria-label="ffmpeg 缺失提示">
+          <strong>ffmpeg 未就绪</strong>
+          <span>{ffmpegMessage}</span>
         </section>
       ) : null}
 

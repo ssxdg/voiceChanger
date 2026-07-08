@@ -24,6 +24,16 @@ export type BackendModelCatalog = {
   models: BackendModel[]
 }
 
+export type BackendToolStatus = {
+  available: boolean
+  path: string
+  message: string
+}
+
+export type BackendEnvironment = {
+  ffmpeg: BackendToolStatus
+}
+
 export type BackendSnapshot = {
   status: BackendStatus
   devices: BackendDevices
@@ -32,6 +42,7 @@ export type BackendSnapshot = {
 export type BackendClient = {
   loadSnapshot: () => Promise<BackendSnapshot>
   loadModels: () => Promise<BackendModelCatalog>
+  loadEnvironment: () => Promise<BackendEnvironment>
 }
 
 export const DEFAULT_BACKEND_BASE_URL = 'http://127.0.0.1:6242'
@@ -73,6 +84,10 @@ export function createBackendClient(
     async loadModels() {
       // 模型列表属于模型管理页的独立数据，单独读取可以避免首屏控制台被模型扫描拖慢。
       return requestJson<BackendModelCatalog>(transport, `${normalizedBaseUrl}/models`)
+    },
+    async loadEnvironment() {
+      // 环境依赖状态独立读取，后续 CUDA、DirectML 和虚拟声卡检测都可以沿用同一入口扩展。
+      return requestJson<BackendEnvironment>(transport, `${normalizedBaseUrl}/environment`)
     },
   }
 }
