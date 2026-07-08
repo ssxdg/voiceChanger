@@ -66,6 +66,31 @@ class HttpServerTest(unittest.TestCase):
         self.assertEqual(self._get_json("/models"), {"modelCount": 0, "models": []})
         self.assertIn("ffmpeg", self._get_json("/environment"))
 
+    def test_get_and_post_parameters_as_json(self):
+        self.assertEqual(
+            self._get_json("/parameters"),
+            {
+                "pitchSemitones": 0,
+                "indexRate": 0.75,
+                "protect": 0.33,
+                "inputThresholdDb": -45,
+                "outputGainDb": 0,
+                "denoise": False,
+            },
+        )
+
+        payload = {
+            "pitchSemitones": -5,
+            "indexRate": 0.6,
+            "protect": 0.5,
+            "inputThresholdDb": -42,
+            "outputGainDb": 2,
+            "denoise": True,
+        }
+
+        self.assertEqual(self._post_json("/parameters", payload), payload)
+        self.assertEqual(self._get_json("/parameters"), payload)
+
     def test_unknown_path_returns_json_404(self):
         with self.assertRaises(HTTPError) as error:
             self._get_json("/missing")
@@ -81,9 +106,21 @@ class HttpServerTest(unittest.TestCase):
             self.assertEqual(response.status, 204)
             self.assertEqual(response.headers["Access-Control-Allow-Origin"], "http://127.0.0.1:5173")
             self.assertIn("GET", response.headers["Access-Control-Allow-Methods"])
+            self.assertIn("POST", response.headers["Access-Control-Allow-Methods"])
 
     def _get_json(self, path):
         with urlopen(f"{self.base_url}{path}", timeout=5) as response:
+            self.assertEqual(response.headers["Content-Type"], "application/json; charset=utf-8")
+            return json.loads(response.read().decode("utf-8"))
+
+    def _post_json(self, path, payload):
+        request = Request(
+            f"{self.base_url}{path}",
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json; charset=utf-8"},
+            method="POST",
+        )
+        with urlopen(request, timeout=5) as response:
             self.assertEqual(response.headers["Content-Type"], "application/json; charset=utf-8")
             return json.loads(response.read().decode("utf-8"))
 

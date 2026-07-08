@@ -1,6 +1,21 @@
 import { describe, expect, it } from 'vitest'
-import type { BackendClient } from '../api/backendClient'
+import type { BackendClient, BackendConversionParameters } from '../api/backendClient'
 import { useVoiceChangerStore } from './voiceChangerStore'
+
+const defaultParameters: BackendConversionParameters = {
+  pitchSemitones: 0,
+  indexRate: 0.75,
+  protect: 0.33,
+  inputThresholdDb: -45,
+  outputGainDb: 0,
+  denoise: false,
+}
+
+// Store 当前还不直接读取参数接口，但测试 client 需要保持完整契约，避免类型检查遗漏新增后端能力。
+const parameterClientMethods = {
+  loadParameters: async () => defaultParameters,
+  saveParameters: async (parameters: BackendConversionParameters) => parameters,
+}
 
 describe('voiceChangerStore', () => {
   it('保存桌面端启动所需的默认设备和运行状态', () => {
@@ -57,6 +72,7 @@ describe('voiceChangerStore', () => {
           message: 'CUDA 已就绪',
         },
       }),
+      ...parameterClientMethods,
     }
 
     await useVoiceChangerStore.getState().loadBackendSnapshot(client)
@@ -89,6 +105,7 @@ describe('voiceChangerStore', () => {
           message: 'CUDA 已就绪',
         },
       }),
+      ...parameterClientMethods,
     }
 
     await useVoiceChangerStore.getState().loadBackendSnapshot(client)
@@ -127,6 +144,7 @@ describe('voiceChangerStore', () => {
           message: 'CUDA 已就绪',
         },
       }),
+      ...parameterClientMethods,
     }
 
     await useVoiceChangerStore.getState().loadModels(client)
@@ -156,6 +174,7 @@ describe('voiceChangerStore', () => {
           message: 'CUDA 不可用，将使用 CPU 或 DirectML 方案；如需 NVIDIA GPU 加速，请安装匹配的显卡驱动和 CUDA 版 PyTorch',
         },
       }),
+      ...parameterClientMethods,
     }
 
     await useVoiceChangerStore.getState().loadEnvironment(client)

@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable
 
+from .conversion_parameters import ConversionParameters
 from .environment_status import EnvironmentStatus, build_environment_status
 from .model_catalog import ModelCatalog, build_model_catalog
 from .providers import InventoryProvider, unavailable_inventory_provider
@@ -30,11 +31,13 @@ class BackendService:
         inventory_provider: InventoryProvider = unavailable_inventory_provider,
         model_catalog_provider: Callable[[], ModelCatalog] = build_model_catalog,
         environment_provider: Callable[[], EnvironmentStatus] = build_environment_status,
+        parameters: ConversionParameters | None = None,
         state: RuntimeState | None = None,
     ) -> None:
         self._inventory_provider = inventory_provider
         self._model_catalog_provider = model_catalog_provider
         self._environment_provider = environment_provider
+        self._parameters = parameters or ConversionParameters()
         self._state = state or RuntimeState()
 
     def health(self) -> dict[str, object]:
@@ -65,3 +68,11 @@ class BackendService:
     def environment(self) -> dict[str, object]:
         # 环境检测和运行状态分开暴露，避免 ffmpeg 这类依赖缺失影响状态轮询接口的稳定性。
         return self._environment_provider().as_payload()
+
+    def parameters(self) -> dict[str, object]:
+        # 参数接口先保存稳定契约，不直接触发推理链路，方便前端控件逐步接入。
+        return self._parameters.as_payload()
+
+    def update_parameters(self, payload: dict[str, object]) -> dict[str, object]:
+        self._parameters = self._parameters.merge_payload(payload)
+        return self.parameters()

@@ -50,6 +50,17 @@ class BackendServiceTest(unittest.TestCase):
         )
         self.assertEqual(service.models(), {"modelCount": 0, "models": []})
         self.assertEqual(service.environment()["ffmpeg"]["available"], False)
+        self.assertEqual(
+            service.parameters(),
+            {
+                "pitchSemitones": 0,
+                "indexRate": 0.75,
+                "protect": 0.33,
+                "inputThresholdDb": -45,
+                "outputGainDb": 0,
+                "denoise": False,
+            },
+        )
 
     def test_status_reflects_runtime_state(self):
         service = BackendService(
@@ -105,6 +116,33 @@ class BackendServiceTest(unittest.TestCase):
                 },
             },
         )
+
+    def test_update_parameters_returns_stable_payload(self):
+        service = BackendService()
+
+        payload = service.update_parameters(
+            {
+                "pitchSemitones": 12,
+                "indexRate": 0.8,
+                "protect": 0.4,
+                "inputThresholdDb": -36,
+                "outputGainDb": 3,
+                "denoise": True,
+            }
+        )
+
+        self.assertEqual(
+            payload,
+            {
+                "pitchSemitones": 12,
+                "indexRate": 0.8,
+                "protect": 0.4,
+                "inputThresholdDb": -36,
+                "outputGainDb": 3,
+                "denoise": True,
+            },
+        )
+        self.assertEqual(service.parameters(), payload)
 
 
 if __name__ == "__main__":

@@ -35,6 +35,15 @@ export type BackendEnvironment = {
   cuda: BackendToolStatus
 }
 
+export type BackendConversionParameters = {
+  pitchSemitones: number
+  indexRate: number
+  protect: number
+  inputThresholdDb: number
+  outputGainDb: number
+  denoise: boolean
+}
+
 export type BackendSnapshot = {
   status: BackendStatus
   devices: BackendDevices
@@ -44,6 +53,8 @@ export type BackendClient = {
   loadSnapshot: () => Promise<BackendSnapshot>
   loadModels: () => Promise<BackendModelCatalog>
   loadEnvironment: () => Promise<BackendEnvironment>
+  loadParameters: () => Promise<BackendConversionParameters>
+  saveParameters: (parameters: BackendConversionParameters) => Promise<BackendConversionParameters>
 }
 
 export const DEFAULT_BACKEND_BASE_URL = 'http://127.0.0.1:6242'
@@ -52,8 +63,8 @@ type FetchTransport = (input: RequestInfo | URL, init?: RequestInit) => Promise<
 
 const defaultTransport: FetchTransport = (input, init) => fetch(input, init)
 
-async function requestJson<T>(transport: FetchTransport, url: string): Promise<T> {
-  const response = await transport(url)
+async function requestJson<T>(transport: FetchTransport, url: string, init?: RequestInit): Promise<T> {
+  const response = await transport(url, init)
 
   if (!response.ok) {
     throw new Error('本地后端接口请求失败')
@@ -89,6 +100,18 @@ export function createBackendClient(
     async loadEnvironment() {
       // 环境依赖状态独立读取，后续 CUDA、DirectML 和虚拟声卡检测都可以沿用同一入口扩展。
       return requestJson<BackendEnvironment>(transport, `${normalizedBaseUrl}/environment`)
+    },
+    async loadParameters() {
+      // 参数读取保持独立接口，避免控制台首屏刷新时意外覆盖用户正在调整的滑块值。
+      return requestJson<BackendConversionParameters>(transport, `${normalizedBaseUrl}/parameters`)
+    },
+    async saveParameters(parameters) {
+      // POST 只提交结构化 JSON，后续迁移到 FastAPI 或 Tauri IPC 时仍能复用同一字段契约。
+      return requestJson<BackendConversionParameters>(transport, `${normalizedBaseUrl}/parameters`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        body: JSON.stringify(parameters),
+      })
     },
   }
 }

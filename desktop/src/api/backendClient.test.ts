@@ -100,6 +100,34 @@ describe('backendClient', () => {
     )
   })
 
+  it('读取并提交 RVC 转换参数', async () => {
+    const requested: Array<{ url: string; method: string; body: string }> = []
+    const parameters = {
+      pitchSemitones: 7,
+      indexRate: 0.72,
+      protect: 0.4,
+      inputThresholdDb: -40,
+      outputGainDb: 2,
+      denoise: true,
+    }
+    const client = createBackendClient('http://127.0.0.1:6242', async (input: RequestInfo | URL, init?: RequestInit) => {
+      requested.push({
+        url: String(input),
+        method: init?.method ?? 'GET',
+        body: String(init?.body ?? ''),
+      })
+
+      return new Response(JSON.stringify(parameters), { status: 200 })
+    })
+
+    await expect(client.loadParameters()).resolves.toEqual(parameters)
+    await expect(client.saveParameters(parameters)).resolves.toEqual(parameters)
+    expect(requested).toEqual([
+      { url: 'http://127.0.0.1:6242/parameters', method: 'GET', body: '' },
+      { url: 'http://127.0.0.1:6242/parameters', method: 'POST', body: JSON.stringify(parameters) },
+    ])
+  })
+
   it('后端返回错误时抛出可展示的中文错误', async () => {
     // 桌面端需要把底层 HTTP 失败转换成中文错误，避免把状态码或英文异常直接暴露给用户。
     const client = createBackendClient('http://127.0.0.1:6242', async () => new Response('', { status: 500 }))
