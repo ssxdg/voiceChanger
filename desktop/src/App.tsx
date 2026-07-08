@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { BrowserRouter, NavLink, Route, Routes } from 'react-router-dom'
 import { useVoiceChangerStore } from './stores/voiceChangerStore'
 import './App.css'
@@ -24,8 +25,19 @@ function DashboardPage() {
     latencyMs,
     gpuStatus,
     isRealtimeActive,
+    backendConnected,
+    backendError,
+    inputDeviceOptions,
+    outputDeviceOptions,
+    virtualOutputDeviceOptions,
     toggleRealtime,
+    loadBackendSnapshot,
   } = useVoiceChangerStore()
+
+  useEffect(() => {
+    // 页面启动后立即读取本地后端状态，让用户不用手动刷新也能看到设备检测结果。
+    void loadBackendSnapshot()
+  }, [loadBackendSnapshot])
 
   const stateMap = {
     selectedModelName,
@@ -82,9 +94,20 @@ function DashboardPage() {
         </div>
 
         <aside className="device-panel" aria-label="设备与性能状态">
+          <div className="connection-row">
+            <span className={backendConnected ? 'connection-pill is-connected' : 'connection-pill'}>
+              {backendConnected ? '后端已连接' : '后端未连接'}
+            </span>
+            <strong>虚拟输出：{virtualOutputDeviceOptions.length} 个</strong>
+          </div>
+          {backendError ? <p className="error-text">{backendError}</p> : null}
           <div>
             <span className="section-label">GPU 状态</span>
             <strong>{gpuStatus}</strong>
+          </div>
+          <div className="device-summary">
+            <span>麦克风：{inputDeviceOptions.length} 个</span>
+            <span>输出设备：{outputDeviceOptions.length} 个</span>
           </div>
           <p>
             后续模块会从本地 Python 服务读取 CUDA、DirectML、ffmpeg 和虚拟声卡检测结果。

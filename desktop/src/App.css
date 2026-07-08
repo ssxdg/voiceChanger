@@ -215,6 +215,41 @@ h1 {
   font-size: 14px;
 }
 
+/* 后端连接和设备数量是同一组运行时信息，使用稳定布局避免数量变化导致状态区抖动。 */
+.connection-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.connection-pill {
+  border: 1px solid rgba(248, 113, 113, 0.34);
+  border-radius: 999px;
+  padding: 6px 10px;
+  color: #fecaca;
+  background: rgba(127, 29, 29, 0.22);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.connection-pill.is-connected {
+  border-color: rgba(163, 230, 53, 0.36);
+  color: #d9f99d;
+  background: rgba(63, 98, 18, 0.2);
+}
+
+.error-text {
+  color: #fecaca;
+}
+
+.device-summary {
+  display: grid;
+  gap: 8px;
+  color: #91a2b8;
+  font-size: 13px;
+}
+
 @media (max-width: 960px) {
   .app-frame {
     grid-template-columns: 1fr;
