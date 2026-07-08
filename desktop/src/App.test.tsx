@@ -40,6 +40,11 @@ beforeEach(() => {
               path: 'C:/tools/ffmpeg/bin/ffmpeg.exe',
               message: 'ffmpeg 已就绪',
             },
+            cuda: {
+              available: true,
+              path: 'torch.cuda',
+              message: 'CUDA 已就绪',
+            },
           }),
           { status: 200 },
         )
@@ -104,6 +109,11 @@ describe('App', () => {
                 path: 'C:/tools/ffmpeg/bin/ffmpeg.exe',
                 message: 'ffmpeg 已就绪',
               },
+              cuda: {
+                available: true,
+                path: 'torch.cuda',
+                message: 'CUDA 已就绪',
+              },
             }),
             { status: 200 },
           )
@@ -146,6 +156,11 @@ describe('App', () => {
                 path: '',
                 message: '未检测到 ffmpeg，请安装 ffmpeg 并加入 PATH',
               },
+              cuda: {
+                available: true,
+                path: 'torch.cuda',
+                message: 'CUDA 已就绪',
+              },
             }),
             { status: 200 },
           )
@@ -180,6 +195,60 @@ describe('App', () => {
     expect(screen.getByText('未检测到 ffmpeg，请安装 ffmpeg 并加入 PATH')).toBeInTheDocument()
   })
 
+  it('控制台展示 CUDA 不可用的中文降级提示', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input)
+        if (url.endsWith('/environment')) {
+          return new Response(
+            JSON.stringify({
+              ffmpeg: {
+                available: true,
+                path: 'C:/tools/ffmpeg/bin/ffmpeg.exe',
+                message: 'ffmpeg 已就绪',
+              },
+              cuda: {
+                available: false,
+                path: '',
+                message: 'CUDA 不可用，将使用 CPU 或 DirectML 方案；如需 NVIDIA GPU 加速，请安装匹配的显卡驱动和 CUDA 版 PyTorch',
+              },
+            }),
+            { status: 200 },
+          )
+        }
+
+        if (url.endsWith('/models')) {
+          return new Response(JSON.stringify({ modelCount: 1, models: [] }), { status: 200 })
+        }
+
+        if (url.endsWith('/status')) {
+          return new Response(
+            JSON.stringify({
+              running: false,
+              configured: false,
+              latencyMs: 0,
+              selectedModel: '',
+              lastError: null,
+            }),
+            { status: 200 },
+          )
+        }
+
+        return new Response(JSON.stringify({ inputDevices: [], outputDevices: [], virtualOutputDevices: [] }), {
+          status: 200,
+        })
+      }),
+    )
+
+    render(<App />)
+
+    await waitFor(() => expect(screen.getByText('CUDA 不可用')).toBeInTheDocument())
+    expect(
+      screen.getByText('CUDA 不可用，将使用 CPU 或 DirectML 方案；如需 NVIDIA GPU 加速，请安装匹配的显卡驱动和 CUDA 版 PyTorch'),
+    ).toBeInTheDocument()
+  })
+
   it('在模型管理页展示本地模型列表', async () => {
     vi.stubGlobal(
       'fetch',
@@ -205,14 +274,19 @@ describe('App', () => {
         if (url.endsWith('/environment')) {
           return new Response(
             JSON.stringify({
-              ffmpeg: {
-                available: true,
-                path: 'C:/tools/ffmpeg/bin/ffmpeg.exe',
-                message: 'ffmpeg 已就绪',
-              },
-            }),
-            { status: 200 },
-          )
+            ffmpeg: {
+              available: true,
+              path: 'C:/tools/ffmpeg/bin/ffmpeg.exe',
+              message: 'ffmpeg 已就绪',
+            },
+            cuda: {
+              available: true,
+              path: 'torch.cuda',
+              message: 'CUDA 已就绪',
+            },
+          }),
+          { status: 200 },
+        )
         }
 
         return new Response(

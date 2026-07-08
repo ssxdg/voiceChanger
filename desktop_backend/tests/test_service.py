@@ -81,7 +81,12 @@ class BackendServiceTest(unittest.TestCase):
     def test_environment_returns_dependency_payload(self):
         service = BackendService(
             environment_provider=lambda: EnvironmentStatus(
-                ffmpeg=ToolStatus(available=False, path="", message="未检测到 ffmpeg，请安装 ffmpeg 并加入 PATH")
+                ffmpeg=ToolStatus(available=False, path="", message="未检测到 ffmpeg，请安装 ffmpeg 并加入 PATH"),
+                cuda=ToolStatus(
+                    available=False,
+                    path="",
+                    message="CUDA 不可用，将使用 CPU 或 DirectML 方案；如需 NVIDIA GPU 加速，请安装匹配的显卡驱动和 CUDA 版 PyTorch",
+                ),
             )
         )
 
@@ -92,7 +97,12 @@ class BackendServiceTest(unittest.TestCase):
                     "available": False,
                     "path": "",
                     "message": "未检测到 ffmpeg，请安装 ffmpeg 并加入 PATH",
-                }
+                },
+                "cuda": {
+                    "available": False,
+                    "path": "",
+                    "message": "CUDA 不可用，将使用 CPU 或 DirectML 方案；如需 NVIDIA GPU 加速，请安装匹配的显卡驱动和 CUDA 版 PyTorch",
+                },
             },
         )
 

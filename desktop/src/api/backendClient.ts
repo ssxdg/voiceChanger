@@ -32,6 +32,7 @@ export type BackendToolStatus = {
 
 export type BackendEnvironment = {
   ffmpeg: BackendToolStatus
+  cuda: BackendToolStatus
 }
 
 export type BackendSnapshot = {

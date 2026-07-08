@@ -8,6 +8,7 @@
 - 输入设备、输出设备和虚拟输出设备分类。
 - 本地模型列表扫描：`assets/weights/*.pth` 和 `logs/**/*.index`。
 - ffmpeg 运行环境检测：检查 PATH 中是否存在可用 `ffmpeg`。
+- CUDA 运行环境检测：检查当前 Python 环境中的 `torch.cuda.is_available()` 结果。
 - 桌面端稳定 payload：`health`、`status`、`devices`、`models`、`environment`。
 - 标准库本地 HTTP 服务入口：`/health`、`/status`、`/devices`、`/models`、`/environment`。
 - 无第三方依赖的单元测试。

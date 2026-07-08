@@ -19,6 +19,8 @@ type VoiceChangerState = {
   modelListError: string | null
   ffmpegAvailable: boolean | null
   ffmpegMessage: string
+  cudaAvailable: boolean | null
+  cudaMessage: string
   environmentError: string | null
   toggleRealtime: () => void
   loadBackendSnapshot: (client?: BackendClient) => Promise<void>
@@ -45,6 +47,8 @@ export const useVoiceChangerStore = create<VoiceChangerState>()(
       modelListError: null,
       ffmpegAvailable: null,
       ffmpegMessage: '等待 ffmpeg 检测',
+      cudaAvailable: null,
+      cudaMessage: '等待 CUDA 检测',
       environmentError: null,
       // 使用一个集中 action 切换状态，后续接入后端时只需要在这里串联启动/停止接口。
       toggleRealtime: () => {
@@ -100,6 +104,8 @@ export const useVoiceChangerStore = create<VoiceChangerState>()(
           set({
             ffmpegAvailable: environment.ffmpeg.available,
             ffmpegMessage: environment.ffmpeg.message,
+            cudaAvailable: environment.cuda.available,
+            cudaMessage: environment.cuda.message,
             environmentError: null,
           })
         } catch (error) {
@@ -107,6 +113,8 @@ export const useVoiceChangerStore = create<VoiceChangerState>()(
           set({
             ffmpegAvailable: false,
             ffmpegMessage: '无法读取 ffmpeg 状态',
+            cudaAvailable: false,
+            cudaMessage: '无法读取 CUDA 状态',
             environmentError: error instanceof Error ? error.message : '读取运行环境失败',
           })
         }

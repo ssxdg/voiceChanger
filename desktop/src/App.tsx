@@ -34,6 +34,8 @@ function DashboardPage() {
     modelListError,
     ffmpegAvailable,
     ffmpegMessage,
+    cudaAvailable,
+    cudaMessage,
     toggleRealtime,
     loadBackendSnapshot,
     loadModels,
@@ -92,6 +94,13 @@ function DashboardPage() {
         <section className="dependency-alert" aria-label="ffmpeg 缺失提示">
           <strong>ffmpeg 未就绪</strong>
           <span>{ffmpegMessage}</span>
+        </section>
+      ) : null}
+
+      {cudaAvailable === false ? (
+        <section className="dependency-alert" aria-label="CUDA 不可用提示">
+          <strong>CUDA 不可用</strong>
+          <span>{cudaMessage}</span>
         </section>
       ) : null}
 

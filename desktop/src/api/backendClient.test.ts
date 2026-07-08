@@ -80,6 +80,11 @@ describe('backendClient', () => {
             path: '',
             message: '未检测到 ffmpeg，请安装 ffmpeg 并加入 PATH',
           },
+          cuda: {
+            available: false,
+            path: '',
+            message: 'CUDA 不可用，将使用 CPU 或 DirectML 方案；如需 NVIDIA GPU 加速，请安装匹配的显卡驱动和 CUDA 版 PyTorch',
+          },
         }),
         { status: 200 },
       )
@@ -89,6 +94,10 @@ describe('backendClient', () => {
 
     expect(environment.ffmpeg.available).toBe(false)
     expect(environment.ffmpeg.message).toBe('未检测到 ffmpeg，请安装 ffmpeg 并加入 PATH')
+    expect(environment.cuda.available).toBe(false)
+    expect(environment.cuda.message).toBe(
+      'CUDA 不可用，将使用 CPU 或 DirectML 方案；如需 NVIDIA GPU 加速，请安装匹配的显卡驱动和 CUDA 版 PyTorch',
+    )
   })
 
   it('后端返回错误时抛出可展示的中文错误', async () => {

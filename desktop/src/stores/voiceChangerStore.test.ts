@@ -51,6 +51,11 @@ describe('voiceChangerStore', () => {
           path: 'C:/tools/ffmpeg/bin/ffmpeg.exe',
           message: 'ffmpeg 已就绪',
         },
+        cuda: {
+          available: true,
+          path: 'torch.cuda',
+          message: 'CUDA 已就绪',
+        },
       }),
     }
 
@@ -77,6 +82,11 @@ describe('voiceChangerStore', () => {
           available: true,
           path: 'C:/tools/ffmpeg/bin/ffmpeg.exe',
           message: 'ffmpeg 已就绪',
+        },
+        cuda: {
+          available: true,
+          path: 'torch.cuda',
+          message: 'CUDA 已就绪',
         },
       }),
     }
@@ -111,6 +121,11 @@ describe('voiceChangerStore', () => {
           path: 'C:/tools/ffmpeg/bin/ffmpeg.exe',
           message: 'ffmpeg 已就绪',
         },
+        cuda: {
+          available: true,
+          path: 'torch.cuda',
+          message: 'CUDA 已就绪',
+        },
       }),
     }
 
@@ -135,6 +150,11 @@ describe('voiceChangerStore', () => {
           path: '',
           message: '未检测到 ffmpeg，请安装 ffmpeg 并加入 PATH',
         },
+        cuda: {
+          available: false,
+          path: '',
+          message: 'CUDA 不可用，将使用 CPU 或 DirectML 方案；如需 NVIDIA GPU 加速，请安装匹配的显卡驱动和 CUDA 版 PyTorch',
+        },
       }),
     }
 
@@ -142,5 +162,9 @@ describe('voiceChangerStore', () => {
 
     expect(useVoiceChangerStore.getState().ffmpegAvailable).toBe(false)
     expect(useVoiceChangerStore.getState().ffmpegMessage).toBe('未检测到 ffmpeg，请安装 ffmpeg 并加入 PATH')
+    expect(useVoiceChangerStore.getState().cudaAvailable).toBe(false)
+    expect(useVoiceChangerStore.getState().cudaMessage).toBe(
+      'CUDA 不可用，将使用 CPU 或 DirectML 方案；如需 NVIDIA GPU 加速，请安装匹配的显卡驱动和 CUDA 版 PyTorch',
+    )
   })
 })
