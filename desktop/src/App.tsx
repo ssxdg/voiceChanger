@@ -161,6 +161,49 @@ function PlaceholderPage({ title }: { title: string }) {
   )
 }
 
+function SettingsPage() {
+  const { pitchSemitones, parametersError, loadParameters, savePitchSemitones } = useVoiceChangerStore()
+
+  useEffect(() => {
+    // 参数设置页进入时单独读取后端参数，避免首屏控制台刷新覆盖用户正在调整的滑块值。
+    void loadParameters()
+  }, [loadParameters])
+
+  return (
+    <main className="dashboard-shell">
+      <section className="hero-panel compact">
+        <div>
+          <p className="section-label">参数设置</p>
+          <h1>设置</h1>
+          <p className="hero-copy">调整变声推理参数。</p>
+        </div>
+      </section>
+
+      {parametersError ? <p className="error-text">{parametersError}</p> : null}
+
+      <section className="settings-panel" aria-label="参数调节">
+        <div className="parameter-row">
+          <div>
+            <strong>音调调节</strong>
+            <span>音调：{pitchSemitones} 半音</span>
+          </div>
+          <input
+            aria-label="音调调节"
+            max="12"
+            min="-12"
+            step="1"
+            type="range"
+            value={pitchSemitones}
+            onChange={(event) => {
+              void savePitchSemitones(Number(event.currentTarget.value))
+            }}
+          />
+        </div>
+      </section>
+    </main>
+  )
+}
+
 function ModelsPage() {
   const { selectedModelName, modelItems, modelCount, modelListError, modelLoadError, loadModels, loadSelectedModel } =
     useVoiceChangerStore()
@@ -249,7 +292,7 @@ function AppShell() {
         <Route path="/" element={<DashboardPage />} />
         <Route path="/models" element={<ModelsPage />} />
         <Route path="/files" element={<PlaceholderPage title="文件变声" />} />
-        <Route path="/settings" element={<PlaceholderPage title="设置" />} />
+        <Route path="/settings" element={<SettingsPage />} />
       </Routes>
     </div>
   )

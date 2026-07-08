@@ -1,6 +1,20 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { backendClient, type BackendClient, type BackendModel } from '../api/backendClient'
+import {
+  backendClient,
+  type BackendClient,
+  type BackendConversionParameters,
+  type BackendModel,
+} from '../api/backendClient'
+
+const defaultConversionParameters: BackendConversionParameters = {
+  pitchSemitones: 0,
+  indexRate: 0.75,
+  protect: 0.33,
+  inputThresholdDb: -45,
+  outputGainDb: 0,
+  denoise: false,
+}
 
 type VoiceChangerState = {
   selectedModelName: string
@@ -18,6 +32,9 @@ type VoiceChangerState = {
   modelCount: number
   modelListError: string | null
   modelLoadError: string | null
+  conversionParameters: BackendConversionParameters
+  pitchSemitones: number
+  parametersError: string | null
   ffmpegAvailable: boolean | null
   ffmpegMessage: string
   cudaAvailable: boolean | null
@@ -27,12 +44,14 @@ type VoiceChangerState = {
   loadBackendSnapshot: (client?: BackendClient) => Promise<void>
   loadModels: (client?: BackendClient) => Promise<void>
   loadSelectedModel: (modelPath: string, client?: BackendClient) => Promise<void>
+  loadParameters: (client?: BackendClient) => Promise<void>
+  savePitchSemitones: (pitchSemitones: number, client?: BackendClient) => Promise<void>
   loadEnvironment: (client?: BackendClient) => Promise<void>
 }
 
 export const useVoiceChangerStore = create<VoiceChangerState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       selectedModelName: '未选择模型',
       inputDeviceName: '未选择麦克风',
       outputDeviceName: '未选择输出设备',
@@ -48,6 +67,9 @@ export const useVoiceChangerStore = create<VoiceChangerState>()(
       modelCount: 0,
       modelListError: null,
       modelLoadError: null,
+      conversionParameters: defaultConversionParameters,
+      pitchSemitones: defaultConversionParameters.pitchSemitones,
+      parametersError: null,
       ffmpegAvailable: null,
       ffmpegMessage: '等待 ffmpeg 检测',
       cudaAvailable: null,
@@ -119,6 +141,42 @@ export const useVoiceChangerStore = create<VoiceChangerState>()(
           })
         }
       },
+      loadParameters: async (client = backendClient) => {
+        try {
+          const parameters = await client.loadParameters()
+
+          set({
+            conversionParameters: parameters,
+            pitchSemitones: parameters.pitchSemitones,
+            parametersError: null,
+          })
+        } catch (error) {
+          // 参数读取失败不影响基础控制台，设置页单独展示错误，用户仍可返回其他模块。
+          set({
+            parametersError: error instanceof Error ? error.message : '读取参数失败',
+          })
+        }
+      },
+      savePitchSemitones: async (pitchSemitones, client = backendClient) => {
+        try {
+          const nextParameters = {
+            ...get().conversionParameters,
+            pitchSemitones,
+          }
+          const savedParameters = await client.saveParameters(nextParameters)
+
+          set({
+            conversionParameters: savedParameters,
+            pitchSemitones: savedParameters.pitchSemitones,
+            parametersError: null,
+          })
+        } catch (error) {
+          // 保存失败时保留当前滑块值，错误单独展示，避免用户误以为后端已经接受该参数。
+          set({
+            parametersError: error instanceof Error ? error.message : '保存音调参数失败',
+          })
+        }
+      },
       loadEnvironment: async (client = backendClient) => {
         try {
           const environment = await client.loadEnvironment()
@@ -152,6 +210,8 @@ export const useVoiceChangerStore = create<VoiceChangerState>()(
         latencyMs: state.latencyMs,
         gpuStatus: state.gpuStatus,
         isRealtimeActive: state.isRealtimeActive,
+        conversionParameters: state.conversionParameters,
+        pitchSemitones: state.pitchSemitones,
       }),
     },
   ),

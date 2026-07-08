@@ -340,4 +340,61 @@ describe('App', () => {
     await waitFor(() => expect(screen.getByText('尚未发现本地 RVC 模型')).toBeInTheDocument())
     expect(screen.getByText('请将 .pth 模型放入 assets/weights 后刷新模型列表')).toBeInTheDocument()
   })
+
+  it('设置页可读取并保存音调调节', async () => {
+    const savedParameters: string[] = []
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input)
+        if (url.endsWith('/parameters') && init?.method === 'POST') {
+          savedParameters.push(String(init.body ?? ''))
+          return new Response(String(init.body ?? '{}'), { status: 200 })
+        }
+
+        if (url.endsWith('/parameters')) {
+          return new Response(
+            JSON.stringify({
+              pitchSemitones: 4,
+              indexRate: 0.75,
+              protect: 0.33,
+              inputThresholdDb: -45,
+              outputGainDb: 0,
+              denoise: false,
+            }),
+            { status: 200 },
+          )
+        }
+
+        return new Response(
+          JSON.stringify({
+            running: false,
+            configured: false,
+            latencyMs: 0,
+            selectedModel: '',
+            lastError: null,
+          }),
+          { status: 200 },
+        )
+      }),
+    )
+
+    render(<App />)
+    fireEvent.click(screen.getByRole('link', { name: '设置' }))
+
+    await waitFor(() => expect(screen.getByText('音调：4 半音')).toBeInTheDocument())
+    fireEvent.change(screen.getByLabelText('音调调节'), { target: { value: '-3' } })
+
+    await waitFor(() => expect(screen.getByText('音调：-3 半音')).toBeInTheDocument())
+    expect(savedParameters).toEqual([
+      JSON.stringify({
+        pitchSemitones: -3,
+        indexRate: 0.75,
+        protect: 0.33,
+        inputThresholdDb: -45,
+        outputGainDb: 0,
+        denoise: false,
+      }),
+    ])
+  })
 })
