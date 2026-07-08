@@ -1,6 +1,7 @@
 import unittest
 
 from desktop_backend.device_inventory import build_inventory
+from desktop_backend.model_catalog import ModelCatalog
 from desktop_backend.service import BackendService, RuntimeState
 
 
@@ -46,6 +47,7 @@ class BackendServiceTest(unittest.TestCase):
                 "virtualOutputDevices": ["CABLE Input (MME)"],
             },
         )
+        self.assertEqual(service.models(), {"modelCount": 0, "models": []})
 
     def test_status_reflects_runtime_state(self):
         service = BackendService(
@@ -68,6 +70,11 @@ class BackendServiceTest(unittest.TestCase):
                 "lastError": None,
             },
         )
+
+    def test_models_returns_catalog_payload(self):
+        service = BackendService(model_catalog_provider=lambda: ModelCatalog([]))
+
+        self.assertEqual(service.models(), {"modelCount": 0, "models": []})
 
 
 if __name__ == "__main__":

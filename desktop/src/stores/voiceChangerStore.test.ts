@@ -44,6 +44,7 @@ describe('voiceChangerStore', () => {
           virtualOutputDevices: ['CABLE Input (MME)'],
         },
       }),
+      loadModels: async () => ({ modelCount: 0, models: [] }),
     }
 
     await useVoiceChangerStore.getState().loadBackendSnapshot(client)
@@ -63,6 +64,7 @@ describe('voiceChangerStore', () => {
       loadSnapshot: async () => {
         throw new Error('连接本地后端失败')
       },
+      loadModels: async () => ({ modelCount: 0, models: [] }),
     }
 
     await useVoiceChangerStore.getState().loadBackendSnapshot(client)
@@ -70,5 +72,32 @@ describe('voiceChangerStore', () => {
     expect(useVoiceChangerStore.getState().backendConnected).toBe(false)
     expect(useVoiceChangerStore.getState().backendError).toBe('连接本地后端失败')
     expect(useVoiceChangerStore.getState().isRealtimeActive).toBe(false)
+  })
+
+  it('从后端读取模型列表并保存在运行时状态', async () => {
+    useVoiceChangerStore.setState(useVoiceChangerStore.getInitialState())
+    const client: BackendClient = {
+      loadSnapshot: async () => {
+        throw new Error('本测试不应读取状态快照')
+      },
+      loadModels: async () => ({
+        modelCount: 1,
+        models: [
+          {
+            name: 'demo.pth',
+            modelPath: 'E:/LLM/bianshengqi/assets/weights/demo.pth',
+            indexPath: 'E:/LLM/bianshengqi/logs/demo/added_IVF_demo_v2.index',
+            indexReady: true,
+          },
+        ],
+      }),
+    }
+
+    await useVoiceChangerStore.getState().loadModels(client)
+
+    expect(useVoiceChangerStore.getState().modelCount).toBe(1)
+    expect(useVoiceChangerStore.getState().modelItems[0].name).toBe('demo.pth')
+    expect(useVoiceChangerStore.getState().modelItems[0].indexReady).toBe(true)
+    expect(useVoiceChangerStore.getState().modelListError).toBeNull()
   })
 })

@@ -12,6 +12,18 @@ export type BackendDevices = {
   virtualOutputDevices: string[]
 }
 
+export type BackendModel = {
+  name: string
+  modelPath: string
+  indexPath: string
+  indexReady: boolean
+}
+
+export type BackendModelCatalog = {
+  modelCount: number
+  models: BackendModel[]
+}
+
 export type BackendSnapshot = {
   status: BackendStatus
   devices: BackendDevices
@@ -19,6 +31,7 @@ export type BackendSnapshot = {
 
 export type BackendClient = {
   loadSnapshot: () => Promise<BackendSnapshot>
+  loadModels: () => Promise<BackendModelCatalog>
 }
 
 export const DEFAULT_BACKEND_BASE_URL = 'http://127.0.0.1:6242'
@@ -56,6 +69,10 @@ export function createBackendClient(
       ])
 
       return { status, devices }
+    },
+    async loadModels() {
+      // 模型列表属于模型管理页的独立数据，单独读取可以避免首屏控制台被模型扫描拖慢。
+      return requestJson<BackendModelCatalog>(transport, `${normalizedBaseUrl}/models`)
     },
   }
 }

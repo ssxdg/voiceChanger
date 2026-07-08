@@ -63,6 +63,7 @@ class HttpServerTest(unittest.TestCase):
                 "virtualOutputDevices": ["CABLE Input (MME)"],
             },
         )
+        self.assertEqual(self._get_json("/models"), {"modelCount": 0, "models": []})
 
     def test_unknown_path_returns_json_404(self):
         with self.assertRaises(HTTPError) as error:

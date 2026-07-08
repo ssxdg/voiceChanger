@@ -132,6 +132,47 @@ function PlaceholderPage({ title }: { title: string }) {
   )
 }
 
+function ModelsPage() {
+  const { modelItems, modelCount, modelListError, loadModels } = useVoiceChangerStore()
+
+  useEffect(() => {
+    // 模型页进入时再扫描本地模型，避免控制台首屏承担模型目录读取成本。
+    void loadModels()
+  }, [loadModels])
+
+  return (
+    <main className="dashboard-shell">
+      <section className="hero-panel compact">
+        <div>
+          <p className="section-label">模型管理</p>
+          <h1>模型管理</h1>
+          <p className="hero-copy">已导入模型：{modelCount} 个</p>
+        </div>
+      </section>
+
+      {modelListError ? <p className="error-text">{modelListError}</p> : null}
+
+      <section className="model-list" aria-label="本地模型列表">
+        {modelItems.length === 0 ? (
+          <div className="empty-panel">尚未发现本地 RVC 模型</div>
+        ) : (
+          modelItems.map((model) => (
+            <article className="model-card" key={model.modelPath}>
+              <div>
+                <strong>{model.name}</strong>
+                <span>{model.modelPath}</span>
+              </div>
+              <span className={model.indexReady ? 'model-index is-ready' : 'model-index'}>
+                {model.indexReady ? '索引已匹配' : '未匹配索引'}
+              </span>
+            </article>
+          ))
+        )}
+      </section>
+    </main>
+  )
+}
+
 function AppShell() {
   return (
     <div className="app-frame">
@@ -155,7 +196,7 @@ function AppShell() {
 
       <Routes>
         <Route path="/" element={<DashboardPage />} />
-        <Route path="/models" element={<PlaceholderPage title="模型管理" />} />
+        <Route path="/models" element={<ModelsPage />} />
         <Route path="/files" element={<PlaceholderPage title="文件变声" />} />
         <Route path="/settings" element={<PlaceholderPage title="设置" />} />
       </Routes>

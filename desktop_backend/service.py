@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Callable
 
+from .model_catalog import ModelCatalog, build_model_catalog
 from .providers import InventoryProvider, unavailable_inventory_provider
 
 
@@ -25,9 +27,11 @@ class BackendService:
     def __init__(
         self,
         inventory_provider: InventoryProvider = unavailable_inventory_provider,
+        model_catalog_provider: Callable[[], ModelCatalog] = build_model_catalog,
         state: RuntimeState | None = None,
     ) -> None:
         self._inventory_provider = inventory_provider
+        self._model_catalog_provider = model_catalog_provider
         self._state = state or RuntimeState()
 
     def health(self) -> dict[str, object]:
@@ -51,3 +55,6 @@ class BackendService:
             "virtualOutputDevices": [device.label for device in inventory.virtual_output_devices],
         }
 
+    def models(self) -> dict[str, object]:
+        # 模型列表只返回桌面端需要展示的轻量字段，真实加载和删除操作后续再通过单独接口实现。
+        return self._model_catalog_provider().as_payload()

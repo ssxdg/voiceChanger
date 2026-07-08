@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import { useVoiceChangerStore } from './stores/voiceChangerStore'
@@ -17,6 +17,16 @@ beforeEach(() => {
             latencyMs: 0,
             selectedModel: '',
             lastError: null,
+          }),
+          { status: 200 },
+        )
+      }
+
+      if (url.endsWith('/models')) {
+        return new Response(
+          JSON.stringify({
+            modelCount: 0,
+            models: [],
           }),
           { status: 200 },
         )
@@ -69,6 +79,10 @@ describe('App', () => {
           )
         }
 
+        if (url.endsWith('/models')) {
+          return new Response(JSON.stringify({ modelCount: 0, models: [] }), { status: 200 })
+        }
+
         return new Response(
           JSON.stringify({
             inputDevices: ['Microphone Array (MME)'],
@@ -84,5 +98,49 @@ describe('App', () => {
 
     await waitFor(() => expect(screen.getByText('后端已连接')).toBeInTheDocument())
     expect(screen.getByText('虚拟输出：1 个')).toBeInTheDocument()
+  })
+
+  it('在模型管理页展示本地模型列表', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input)
+        if (url.endsWith('/models')) {
+          return new Response(
+            JSON.stringify({
+              modelCount: 1,
+              models: [
+                {
+                  name: 'demo.pth',
+                  modelPath: 'E:/LLM/bianshengqi/assets/weights/demo.pth',
+                  indexPath: 'E:/LLM/bianshengqi/logs/demo/added_IVF_demo_v2.index',
+                  indexReady: true,
+                },
+              ],
+            }),
+            { status: 200 },
+          )
+        }
+
+        return new Response(
+          JSON.stringify({
+            running: false,
+            configured: false,
+            latencyMs: 0,
+            selectedModel: '',
+            lastError: null,
+          }),
+          { status: 200 },
+        )
+      }),
+    )
+
+    render(<App />)
+    fireEvent.click(screen.getByRole('link', { name: '模型管理' }))
+
+    await waitFor(() => expect(screen.getByText('已导入模型：1 个')).toBeInTheDocument())
+    expect(screen.getByRole('heading', { name: '模型管理' })).toBeInTheDocument()
+    expect(screen.getByText('demo.pth')).toBeInTheDocument()
+    expect(screen.getByText('索引已匹配')).toBeInTheDocument()
   })
 })

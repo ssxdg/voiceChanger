@@ -6,8 +6,9 @@
 
 - 设备清单标准化。
 - 输入设备、输出设备和虚拟输出设备分类。
-- 桌面端稳定 payload：`health`、`status`、`devices`。
-- 标准库本地 HTTP 服务入口：`/health`、`/status`、`/devices`。
+- 本地模型列表扫描：`assets/weights/*.pth` 和 `logs/**/*.index`。
+- 桌面端稳定 payload：`health`、`status`、`devices`、`models`。
+- 标准库本地 HTTP 服务入口：`/health`、`/status`、`/devices`、`/models`。
 - 无第三方依赖的单元测试。
 
 当前模块尚未完成：

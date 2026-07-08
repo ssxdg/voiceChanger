@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { backendClient, type BackendClient } from '../api/backendClient'
+import { backendClient, type BackendClient, type BackendModel } from '../api/backendClient'
 
 type VoiceChangerState = {
   selectedModelName: string
@@ -14,8 +14,12 @@ type VoiceChangerState = {
   inputDeviceOptions: string[]
   outputDeviceOptions: string[]
   virtualOutputDeviceOptions: string[]
+  modelItems: BackendModel[]
+  modelCount: number
+  modelListError: string | null
   toggleRealtime: () => void
   loadBackendSnapshot: (client?: BackendClient) => Promise<void>
+  loadModels: (client?: BackendClient) => Promise<void>
 }
 
 export const useVoiceChangerStore = create<VoiceChangerState>()(
@@ -32,6 +36,9 @@ export const useVoiceChangerStore = create<VoiceChangerState>()(
       inputDeviceOptions: [],
       outputDeviceOptions: [],
       virtualOutputDeviceOptions: [],
+      modelItems: [],
+      modelCount: 0,
+      modelListError: null,
       // 使用一个集中 action 切换状态，后续接入后端时只需要在这里串联启动/停止接口。
       toggleRealtime: () => {
         set((state) => ({ isRealtimeActive: !state.isRealtimeActive }))
@@ -58,6 +65,24 @@ export const useVoiceChangerStore = create<VoiceChangerState>()(
             backendError: error instanceof Error ? error.message : '连接本地后端失败',
             gpuStatus: '等待环境检测',
             isRealtimeActive: false,
+          })
+        }
+      },
+      loadModels: async (client = backendClient) => {
+        try {
+          const catalog = await client.loadModels()
+
+          set({
+            modelItems: catalog.models,
+            modelCount: catalog.modelCount,
+            modelListError: null,
+          })
+        } catch (error) {
+          // 模型列表失败不应影响主控制台和实时按钮，因此单独记录模型页错误。
+          set({
+            modelItems: [],
+            modelCount: 0,
+            modelListError: error instanceof Error ? error.message : '读取本地模型列表失败',
           })
         }
       },
