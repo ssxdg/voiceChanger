@@ -35,6 +35,7 @@ type VoiceChangerState = {
   conversionParameters: BackendConversionParameters
   pitchSemitones: number
   indexRate: number
+  protect: number
   parametersError: string | null
   ffmpegAvailable: boolean | null
   ffmpegMessage: string
@@ -48,6 +49,7 @@ type VoiceChangerState = {
   loadParameters: (client?: BackendClient) => Promise<void>
   savePitchSemitones: (pitchSemitones: number, client?: BackendClient) => Promise<void>
   saveIndexRate: (indexRate: number, client?: BackendClient) => Promise<void>
+  saveProtect: (protect: number, client?: BackendClient) => Promise<void>
   loadEnvironment: (client?: BackendClient) => Promise<void>
 }
 
@@ -72,6 +74,7 @@ export const useVoiceChangerStore = create<VoiceChangerState>()(
       conversionParameters: defaultConversionParameters,
       pitchSemitones: defaultConversionParameters.pitchSemitones,
       indexRate: defaultConversionParameters.indexRate,
+      protect: defaultConversionParameters.protect,
       parametersError: null,
       ffmpegAvailable: null,
       ffmpegMessage: '等待 ffmpeg 检测',
@@ -152,6 +155,7 @@ export const useVoiceChangerStore = create<VoiceChangerState>()(
             conversionParameters: parameters,
             pitchSemitones: parameters.pitchSemitones,
             indexRate: parameters.indexRate,
+            protect: parameters.protect,
             parametersError: null,
           })
         } catch (error) {
@@ -202,6 +206,27 @@ export const useVoiceChangerStore = create<VoiceChangerState>()(
           })
         }
       },
+      saveProtect: async (protect, client = backendClient) => {
+        try {
+          // 保护值影响破音抑制，必须与完整参数一起提交，保证后端收到的是同一份推理配置。
+          const nextParameters = {
+            ...get().conversionParameters,
+            protect,
+          }
+          const savedParameters = await client.saveParameters(nextParameters)
+
+          set({
+            conversionParameters: savedParameters,
+            protect: savedParameters.protect,
+            parametersError: null,
+          })
+        } catch (error) {
+          // 保存失败时只展示错误，不回滚滑块，便于用户按当前可见值重试。
+          set({
+            parametersError: error instanceof Error ? error.message : '保存保护值参数失败',
+          })
+        }
+      },
       loadEnvironment: async (client = backendClient) => {
         try {
           const environment = await client.loadEnvironment()
@@ -238,6 +263,7 @@ export const useVoiceChangerStore = create<VoiceChangerState>()(
         conversionParameters: state.conversionParameters,
         pitchSemitones: state.pitchSemitones,
         indexRate: state.indexRate,
+        protect: state.protect,
       }),
     },
   ),

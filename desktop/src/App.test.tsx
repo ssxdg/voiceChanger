@@ -454,4 +454,61 @@ describe('App', () => {
       }),
     ])
   })
+
+  it('设置页可读取并保存保护值调节', async () => {
+    const savedParameters: string[] = []
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input)
+        if (url.endsWith('/parameters') && init?.method === 'POST') {
+          savedParameters.push(String(init.body ?? ''))
+          return new Response(String(init.body ?? '{}'), { status: 200 })
+        }
+
+        if (url.endsWith('/parameters')) {
+          return new Response(
+            JSON.stringify({
+              pitchSemitones: 4,
+              indexRate: 0.66,
+              protect: 0.18,
+              inputThresholdDb: -45,
+              outputGainDb: 0,
+              denoise: false,
+            }),
+            { status: 200 },
+          )
+        }
+
+        return new Response(
+          JSON.stringify({
+            running: false,
+            configured: false,
+            latencyMs: 0,
+            selectedModel: '',
+            lastError: null,
+          }),
+          { status: 200 },
+        )
+      }),
+    )
+
+    render(<App />)
+    fireEvent.click(screen.getByRole('link', { name: '设置' }))
+
+    await waitFor(() => expect(screen.getByText('保护值：18%')).toBeInTheDocument())
+    fireEvent.change(screen.getByLabelText('保护值调节'), { target: { value: '0.27' } })
+
+    await waitFor(() => expect(screen.getByText('保护值：27%')).toBeInTheDocument())
+    expect(savedParameters).toEqual([
+      JSON.stringify({
+        pitchSemitones: 4,
+        indexRate: 0.66,
+        protect: 0.27,
+        inputThresholdDb: -45,
+        outputGainDb: 0,
+        denoise: false,
+      }),
+    ])
+  })
 })

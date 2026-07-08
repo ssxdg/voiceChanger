@@ -162,8 +162,16 @@ function PlaceholderPage({ title }: { title: string }) {
 }
 
 function SettingsPage() {
-  const { pitchSemitones, indexRate, parametersError, loadParameters, savePitchSemitones, saveIndexRate } =
-    useVoiceChangerStore()
+  const {
+    pitchSemitones,
+    indexRate,
+    protect,
+    parametersError,
+    loadParameters,
+    savePitchSemitones,
+    saveIndexRate,
+    saveProtect,
+  } = useVoiceChangerStore()
 
   useEffect(() => {
     // 参数设置页进入时单独读取后端参数，避免首屏控制台刷新覆盖用户正在调整的滑块值。
@@ -215,6 +223,24 @@ function SettingsPage() {
             onChange={(event) => {
               // 滑块变化立即保存到后端，保证实时链路后续启动时使用最新的检索率配置。
               void saveIndexRate(Number(event.currentTarget.value))
+            }}
+          />
+        </div>
+        <div className="parameter-row">
+          <div>
+            <strong>保护值调节</strong>
+            <span>保护值：{Math.round(protect * 100)}%</span>
+          </div>
+          <input
+            aria-label="保护值调节"
+            max="0.5"
+            min="0"
+            step="0.01"
+            type="range"
+            value={protect}
+            onChange={(event) => {
+              // 保护值用于减少破音，保存到后端后可和实时推理参数保持一致。
+              void saveProtect(Number(event.currentTarget.value))
             }}
           />
         </div>
