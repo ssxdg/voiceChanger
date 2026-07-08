@@ -30,14 +30,17 @@ function DashboardPage() {
     inputDeviceOptions,
     outputDeviceOptions,
     virtualOutputDeviceOptions,
+    modelCount,
+    modelListError,
     toggleRealtime,
     loadBackendSnapshot,
+    loadModels,
   } = useVoiceChangerStore()
 
   useEffect(() => {
-    // 页面启动后立即读取本地后端状态，让用户不用手动刷新也能看到设备检测结果。
-    void loadBackendSnapshot()
-  }, [loadBackendSnapshot])
+    // 状态和模型列表互不依赖，并行读取可以让控制台尽快暴露“缺少模型”等阻断提示。
+    void Promise.all([loadBackendSnapshot(), loadModels()])
+  }, [loadBackendSnapshot, loadModels])
 
   const stateMap = {
     selectedModelName,
@@ -74,6 +77,13 @@ function DashboardPage() {
           </article>
         ))}
       </section>
+
+      {modelCount === 0 && !modelListError ? (
+        <section className="missing-model-panel" aria-label="缺少模型提示">
+          <strong>未发现本地模型，实时变声暂不可启动</strong>
+          <span>请将 .pth 模型放入 assets/weights 后刷新模型列表</span>
+        </section>
+      ) : null}
 
       <section className="workbench-grid" aria-label="音频工作区">
         <div className="meter-panel">
@@ -154,7 +164,10 @@ function ModelsPage() {
 
       <section className="model-list" aria-label="本地模型列表">
         {modelItems.length === 0 ? (
-          <div className="empty-panel">尚未发现本地 RVC 模型</div>
+          <div className="empty-panel">
+            <strong>尚未发现本地 RVC 模型</strong>
+            <span>请将 .pth 模型放入 assets/weights 后刷新模型列表</span>
+          </div>
         ) : (
           modelItems.map((model) => (
             <article className="model-card" key={model.modelPath}>

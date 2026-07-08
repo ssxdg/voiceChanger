@@ -100,6 +100,13 @@ describe('App', () => {
     expect(screen.getByText('虚拟输出：1 个')).toBeInTheDocument()
   })
 
+  it('控制台没有模型时展示缺少模型提示', async () => {
+    render(<App />)
+
+    await waitFor(() => expect(screen.getByText('未发现本地模型，实时变声暂不可启动')).toBeInTheDocument())
+    expect(screen.getByText('请将 .pth 模型放入 assets/weights 后刷新模型列表')).toBeInTheDocument()
+  })
+
   it('在模型管理页展示本地模型列表', async () => {
     vi.stubGlobal(
       'fetch',
@@ -142,5 +149,13 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: '模型管理' })).toBeInTheDocument()
     expect(screen.getByText('demo.pth')).toBeInTheDocument()
     expect(screen.getByText('索引已匹配')).toBeInTheDocument()
+  })
+
+  it('模型管理页没有模型时展示导入路径提示', async () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('link', { name: '模型管理' }))
+
+    await waitFor(() => expect(screen.getByText('尚未发现本地 RVC 模型')).toBeInTheDocument())
+    expect(screen.getByText('请将 .pth 模型放入 assets/weights 后刷新模型列表')).toBeInTheDocument()
   })
 })

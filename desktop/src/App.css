@@ -250,6 +250,28 @@ h1 {
   font-size: 13px;
 }
 
+.missing-model-panel {
+  border: 1px solid rgba(248, 113, 113, 0.34);
+  border-radius: 8px;
+  padding: 16px 18px;
+  background: rgba(127, 29, 29, 0.18);
+}
+
+.missing-model-panel strong,
+.missing-model-panel span {
+  display: block;
+}
+
+.missing-model-panel strong {
+  color: #fee2e2;
+}
+
+.missing-model-panel span {
+  margin-top: 6px;
+  color: #fecaca;
+  font-size: 13px;
+}
+
 .model-list {
   display: grid;
   gap: 12px;
@@ -307,6 +329,21 @@ h1 {
 .empty-panel {
   padding: 22px;
   color: #91a2b8;
+}
+
+.empty-panel strong,
+.empty-panel span {
+  display: block;
+}
+
+.empty-panel strong {
+  color: #f8fafc;
+}
+
+.empty-panel span {
+  margin-top: 8px;
+  color: #91a2b8;
+  font-size: 13px;
 }
 
 @media (max-width: 960px) {
