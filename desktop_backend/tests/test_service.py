@@ -2,7 +2,7 @@ import unittest
 
 from desktop_backend.device_inventory import build_inventory
 from desktop_backend.environment_status import EnvironmentStatus, ToolStatus
-from desktop_backend.model_catalog import ModelCatalog
+from desktop_backend.model_catalog import ModelCatalog, ModelItem
 from desktop_backend.service import BackendService, RuntimeState
 
 
@@ -88,6 +88,39 @@ class BackendServiceTest(unittest.TestCase):
         service = BackendService(model_catalog_provider=lambda: ModelCatalog([]))
 
         self.assertEqual(service.models(), {"modelCount": 0, "models": []})
+
+    def test_load_model_updates_runtime_status(self):
+        service = BackendService(
+            model_catalog_provider=lambda: ModelCatalog(
+                [
+                    ModelItem(
+                        name="demo.pth",
+                        model_path="E:/LLM/bianshengqi/assets/weights/demo.pth",
+                        index_path="E:/LLM/bianshengqi/logs/demo/added_IVF_demo_v2.index",
+                    )
+                ]
+            )
+        )
+
+        payload = service.load_model({"modelPath": "E:/LLM/bianshengqi/assets/weights/demo.pth"})
+
+        self.assertEqual(
+            payload,
+            {
+                "running": False,
+                "configured": True,
+                "latencyMs": 0,
+                "selectedModel": "demo.pth",
+                "lastError": None,
+            },
+        )
+        self.assertEqual(service.status()["selectedModel"], "demo.pth")
+
+    def test_load_model_rejects_unknown_model_path(self):
+        service = BackendService(model_catalog_provider=lambda: ModelCatalog([]))
+
+        with self.assertRaises(ValueError):
+            service.load_model({"modelPath": "E:/LLM/bianshengqi/assets/weights/missing.pth"})
 
     def test_environment_returns_dependency_payload(self):
         service = BackendService(

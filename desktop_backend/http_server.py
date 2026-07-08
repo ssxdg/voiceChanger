@@ -47,7 +47,7 @@ class DesktopBackendHandler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:
         path = self.path.split("?", 1)[0]
-        if path != "/parameters":
+        if path not in {"/parameters", "/models/load"}:
             self._write_json({"error": "接口不存在"}, HTTPStatus.NOT_FOUND)
             return
 
@@ -57,9 +57,13 @@ class DesktopBackendHandler(BaseHTTPRequestHandler):
             return
 
         try:
-            response = self.server.service.update_parameters(payload)
-        except (TypeError, ValueError):
-            self._write_json({"error": "参数格式不正确"}, HTTPStatus.BAD_REQUEST)
+            response = (
+                self.server.service.update_parameters(payload)
+                if path == "/parameters"
+                else self.server.service.load_model(payload)
+            )
+        except (TypeError, ValueError) as error:
+            self._write_json({"error": str(error) or "参数格式不正确"}, HTTPStatus.BAD_REQUEST)
             return
 
         self._write_json(response, HTTPStatus.OK)

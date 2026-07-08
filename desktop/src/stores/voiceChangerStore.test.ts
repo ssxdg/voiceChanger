@@ -11,8 +11,15 @@ const defaultParameters: BackendConversionParameters = {
   denoise: false,
 }
 
-// Store 当前还不直接读取参数接口，但测试 client 需要保持完整契约，避免类型检查遗漏新增后端能力。
+// Store 当前还不直接读取模型加载和参数接口，但测试 client 需要保持完整契约，避免类型检查遗漏新增后端能力。
 const parameterClientMethods = {
+  loadModel: async () => ({
+    running: false,
+    configured: true,
+    latencyMs: 0,
+    selectedModel: 'demo.pth',
+    lastError: null,
+  }),
   loadParameters: async () => defaultParameters,
   saveParameters: async (parameters: BackendConversionParameters) => parameters,
 }

@@ -65,6 +65,18 @@ class BackendService:
         # 模型列表只返回桌面端需要展示的轻量字段，真实加载和删除操作后续再通过单独接口实现。
         return self._model_catalog_provider().as_payload()
 
+    def load_model(self, payload: dict[str, object]) -> dict[str, object]:
+        model_path = str(payload.get("modelPath", ""))
+        model = next((item for item in self._model_catalog_provider().models if item.model_path == model_path), None)
+        if model is None:
+            raise ValueError("模型不存在或未导入")
+
+        # 当前阶段只建立“已选择并可被后续推理模块读取”的契约，不在接口内直接加载 RVC 权重，避免阻塞 HTTP 请求。
+        self._state.configured = True
+        self._state.selected_model = model.name
+        self._state.last_error = None
+        return self.status()
+
     def environment(self) -> dict[str, object]:
         # 环境检测和运行状态分开暴露，避免 ffmpeg 这类依赖缺失影响状态轮询接口的稳定性。
         return self._environment_provider().as_payload()

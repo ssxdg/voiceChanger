@@ -69,6 +69,43 @@ describe('backendClient', () => {
     expect(catalog.models[0].indexReady).toBe(true)
   })
 
+  it('请求本地后端加载指定 RVC 模型', async () => {
+    const requested: Array<{ url: string; method: string; body: string }> = []
+    const client = createBackendClient('http://127.0.0.1:6242', async (input: RequestInfo | URL, init?: RequestInit) => {
+      requested.push({
+        url: String(input),
+        method: init?.method ?? 'GET',
+        body: String(init?.body ?? ''),
+      })
+
+      return new Response(
+        JSON.stringify({
+          running: false,
+          configured: true,
+          latencyMs: 0,
+          selectedModel: 'demo.pth',
+          lastError: null,
+        }),
+        { status: 200 },
+      )
+    })
+
+    await expect(client.loadModel('E:/LLM/bianshengqi/assets/weights/demo.pth')).resolves.toEqual({
+      running: false,
+      configured: true,
+      latencyMs: 0,
+      selectedModel: 'demo.pth',
+      lastError: null,
+    })
+    expect(requested).toEqual([
+      {
+        url: 'http://127.0.0.1:6242/models/load',
+        method: 'POST',
+        body: JSON.stringify({ modelPath: 'E:/LLM/bianshengqi/assets/weights/demo.pth' }),
+      },
+    ])
+  })
+
   it('读取本地运行环境依赖状态', async () => {
     const client = createBackendClient('http://127.0.0.1:6242', async (input: RequestInfo | URL) => {
       expect(String(input)).toBe('http://127.0.0.1:6242/environment')

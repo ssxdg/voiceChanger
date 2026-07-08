@@ -6,6 +6,7 @@ from urllib.request import Request, urlopen
 
 from desktop_backend.device_inventory import build_inventory
 from desktop_backend.http_server import create_server
+from desktop_backend.model_catalog import ModelCatalog, ModelItem
 from desktop_backend.service import BackendService
 
 
@@ -31,7 +32,18 @@ class HttpServerTest(unittest.TestCase):
             ],
             [{"name": "MME", "devices": [0, 1]}],
         )
-        service = BackendService(inventory_provider=lambda: inventory)
+        service = BackendService(
+            inventory_provider=lambda: inventory,
+            model_catalog_provider=lambda: ModelCatalog(
+                [
+                    ModelItem(
+                        name="demo.pth",
+                        model_path="E:/LLM/bianshengqi/assets/weights/demo.pth",
+                        index_path="E:/LLM/bianshengqi/logs/demo/added_IVF_demo_v2.index",
+                    )
+                ]
+            ),
+        )
         cls.server = create_server("127.0.0.1", 0, service)
         cls.thread = threading.Thread(target=cls.server.serve_forever, daemon=True)
         cls.thread.start()
@@ -63,8 +75,36 @@ class HttpServerTest(unittest.TestCase):
                 "virtualOutputDevices": ["CABLE Input (MME)"],
             },
         )
-        self.assertEqual(self._get_json("/models"), {"modelCount": 0, "models": []})
+        self.assertEqual(
+            self._get_json("/models"),
+            {
+                "modelCount": 1,
+                "models": [
+                    {
+                        "name": "demo.pth",
+                        "modelPath": "E:/LLM/bianshengqi/assets/weights/demo.pth",
+                        "indexPath": "E:/LLM/bianshengqi/logs/demo/added_IVF_demo_v2.index",
+                        "indexReady": True,
+                    }
+                ],
+            },
+        )
         self.assertIn("ffmpeg", self._get_json("/environment"))
+
+    def test_post_model_load_updates_selected_model(self):
+        payload = self._post_json("/models/load", {"modelPath": "E:/LLM/bianshengqi/assets/weights/demo.pth"})
+
+        self.assertEqual(payload["configured"], True)
+        self.assertEqual(payload["selectedModel"], "demo.pth")
+        self.assertEqual(self._get_json("/status")["selectedModel"], "demo.pth")
+
+    def test_post_model_load_returns_400_for_unknown_model(self):
+        with self.assertRaises(HTTPError) as error:
+            self._post_json("/models/load", {"modelPath": "E:/LLM/bianshengqi/assets/weights/missing.pth"})
+
+        self.assertEqual(error.exception.code, 400)
+        payload = json.loads(error.exception.read().decode("utf-8"))
+        self.assertEqual(payload, {"error": "模型不存在或未导入"})
 
     def test_get_and_post_parameters_as_json(self):
         self.assertEqual(

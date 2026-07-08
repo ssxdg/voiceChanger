@@ -52,6 +52,7 @@ export type BackendSnapshot = {
 export type BackendClient = {
   loadSnapshot: () => Promise<BackendSnapshot>
   loadModels: () => Promise<BackendModelCatalog>
+  loadModel: (modelPath: string) => Promise<BackendStatus>
   loadEnvironment: () => Promise<BackendEnvironment>
   loadParameters: () => Promise<BackendConversionParameters>
   saveParameters: (parameters: BackendConversionParameters) => Promise<BackendConversionParameters>
@@ -96,6 +97,14 @@ export function createBackendClient(
     async loadModels() {
       // 模型列表属于模型管理页的独立数据，单独读取可以避免首屏控制台被模型扫描拖慢。
       return requestJson<BackendModelCatalog>(transport, `${normalizedBaseUrl}/models`)
+    },
+    async loadModel(modelPath) {
+      // 当前接口只请求后端记录选中的模型，真实权重加载会在后续推理服务模块中接入。
+      return requestJson<BackendStatus>(transport, `${normalizedBaseUrl}/models/load`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        body: JSON.stringify({ modelPath }),
+      })
     },
     async loadEnvironment() {
       // 环境依赖状态独立读取，后续 CUDA、DirectML 和虚拟声卡检测都可以沿用同一入口扩展。
