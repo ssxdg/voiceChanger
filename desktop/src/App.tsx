@@ -162,7 +162,8 @@ function PlaceholderPage({ title }: { title: string }) {
 }
 
 function ModelsPage() {
-  const { modelItems, modelCount, modelListError, loadModels } = useVoiceChangerStore()
+  const { selectedModelName, modelItems, modelCount, modelListError, modelLoadError, loadModels, loadSelectedModel } =
+    useVoiceChangerStore()
 
   useEffect(() => {
     // 模型页进入时再扫描本地模型，避免控制台首屏承担模型目录读取成本。
@@ -180,6 +181,7 @@ function ModelsPage() {
       </section>
 
       {modelListError ? <p className="error-text">{modelListError}</p> : null}
+      {modelLoadError ? <p className="error-text">{modelLoadError}</p> : null}
 
       <section className="model-list" aria-label="本地模型列表">
         {modelItems.length === 0 ? (
@@ -188,17 +190,34 @@ function ModelsPage() {
             <span>请将 .pth 模型放入 assets/weights 后刷新模型列表</span>
           </div>
         ) : (
-          modelItems.map((model) => (
-            <article className="model-card" key={model.modelPath}>
-              <div>
-                <strong>{model.name}</strong>
-                <span>{model.modelPath}</span>
-              </div>
-              <span className={model.indexReady ? 'model-index is-ready' : 'model-index'}>
-                {model.indexReady ? '索引已匹配' : '未匹配索引'}
-              </span>
-            </article>
-          ))
+          modelItems.map((model) => {
+            const isSelected = selectedModelName === model.name
+
+            return (
+              <article className="model-card" key={model.modelPath}>
+                <div>
+                  <strong>{model.name}</strong>
+                  <span>{model.modelPath}</span>
+                </div>
+                <div className="model-actions">
+                  {isSelected ? <span className="model-current">当前使用</span> : null}
+                  <span className={model.indexReady ? 'model-index is-ready' : 'model-index'}>
+                    {model.indexReady ? '索引已匹配' : '未匹配索引'}
+                  </span>
+                  <button
+                    className="model-load-button"
+                    type="button"
+                    aria-label={`使用模型 ${model.name}`}
+                    onClick={() => {
+                      void loadSelectedModel(model.modelPath)
+                    }}
+                  >
+                    使用模型
+                  </button>
+                </div>
+              </article>
+            )
+          })
         )}
       </section>
     </main>

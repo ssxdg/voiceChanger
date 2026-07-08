@@ -162,6 +162,48 @@ describe('voiceChangerStore', () => {
     expect(useVoiceChangerStore.getState().modelListError).toBeNull()
   })
 
+  it('请求后端加载模型并同步当前模型状态', async () => {
+    useVoiceChangerStore.setState(useVoiceChangerStore.getInitialState())
+    const loadedModelPaths: string[] = []
+    const client: BackendClient = {
+      loadSnapshot: async () => {
+        throw new Error('本测试不应读取状态快照')
+      },
+      loadModels: async () => ({ modelCount: 0, models: [] }),
+      loadEnvironment: async () => ({
+        ffmpeg: {
+          available: true,
+          path: 'C:/tools/ffmpeg/bin/ffmpeg.exe',
+          message: 'ffmpeg 已就绪',
+        },
+        cuda: {
+          available: true,
+          path: 'torch.cuda',
+          message: 'CUDA 已就绪',
+        },
+      }),
+      loadModel: async (modelPath: string) => {
+        loadedModelPaths.push(modelPath)
+        return {
+          running: false,
+          configured: true,
+          latencyMs: 0,
+          selectedModel: 'demo.pth',
+          lastError: null,
+        }
+      },
+      loadParameters: async () => defaultParameters,
+      saveParameters: async (parameters: BackendConversionParameters) => parameters,
+    }
+
+    await useVoiceChangerStore.getState().loadSelectedModel('E:/LLM/bianshengqi/assets/weights/demo.pth', client)
+
+    expect(loadedModelPaths).toEqual(['E:/LLM/bianshengqi/assets/weights/demo.pth'])
+    expect(useVoiceChangerStore.getState().selectedModelName).toBe('demo.pth')
+    expect(useVoiceChangerStore.getState().backendConnected).toBe(true)
+    expect(useVoiceChangerStore.getState().modelLoadError).toBeNull()
+  })
+
   it('从后端读取 ffmpeg 环境状态并记录缺失提示', async () => {
     useVoiceChangerStore.setState(useVoiceChangerStore.getInitialState())
     const client: BackendClient = {

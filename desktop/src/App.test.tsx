@@ -250,10 +250,25 @@ describe('App', () => {
   })
 
   it('在模型管理页展示本地模型列表', async () => {
+    const requestedModelLoads: string[] = []
     vi.stubGlobal(
       'fetch',
-      vi.fn(async (input: RequestInfo | URL) => {
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
         const url = String(input)
+        if (url.endsWith('/models/load')) {
+          requestedModelLoads.push(String(init?.body ?? ''))
+          return new Response(
+            JSON.stringify({
+              running: false,
+              configured: true,
+              latencyMs: 0,
+              selectedModel: 'demo.pth',
+              lastError: null,
+            }),
+            { status: 200 },
+          )
+        }
+
         if (url.endsWith('/models')) {
           return new Response(
             JSON.stringify({
@@ -309,6 +324,13 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: '模型管理' })).toBeInTheDocument()
     expect(screen.getByText('demo.pth')).toBeInTheDocument()
     expect(screen.getByText('索引已匹配')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: '使用模型 demo.pth' }))
+
+    await waitFor(() => expect(screen.getByText('当前使用')).toBeInTheDocument())
+    expect(requestedModelLoads).toEqual([
+      JSON.stringify({ modelPath: 'E:/LLM/bianshengqi/assets/weights/demo.pth' }),
+    ])
   })
 
   it('模型管理页没有模型时展示导入路径提示', async () => {

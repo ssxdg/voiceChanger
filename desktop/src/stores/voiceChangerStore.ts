@@ -17,6 +17,7 @@ type VoiceChangerState = {
   modelItems: BackendModel[]
   modelCount: number
   modelListError: string | null
+  modelLoadError: string | null
   ffmpegAvailable: boolean | null
   ffmpegMessage: string
   cudaAvailable: boolean | null
@@ -25,6 +26,7 @@ type VoiceChangerState = {
   toggleRealtime: () => void
   loadBackendSnapshot: (client?: BackendClient) => Promise<void>
   loadModels: (client?: BackendClient) => Promise<void>
+  loadSelectedModel: (modelPath: string, client?: BackendClient) => Promise<void>
   loadEnvironment: (client?: BackendClient) => Promise<void>
 }
 
@@ -45,6 +47,7 @@ export const useVoiceChangerStore = create<VoiceChangerState>()(
       modelItems: [],
       modelCount: 0,
       modelListError: null,
+      modelLoadError: null,
       ffmpegAvailable: null,
       ffmpegMessage: '等待 ffmpeg 检测',
       cudaAvailable: null,
@@ -94,6 +97,25 @@ export const useVoiceChangerStore = create<VoiceChangerState>()(
             modelItems: [],
             modelCount: 0,
             modelListError: error instanceof Error ? error.message : '读取本地模型列表失败',
+          })
+        }
+      },
+      loadSelectedModel: async (modelPath, client = backendClient) => {
+        try {
+          const status = await client.loadModel(modelPath)
+
+          set({
+            backendConnected: true,
+            backendError: status.lastError,
+            isRealtimeActive: status.running,
+            latencyMs: status.latencyMs,
+            selectedModelName: status.selectedModel || '未选择模型',
+            modelLoadError: null,
+          })
+        } catch (error) {
+          // 模型加载失败只影响模型管理流程，不清空已有模型列表，便于用户改选其他模型继续尝试。
+          set({
+            modelLoadError: error instanceof Error ? error.message : '加载模型失败',
           })
         }
       },

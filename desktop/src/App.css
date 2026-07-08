@@ -345,6 +345,39 @@ h1 {
   background: rgba(14, 116, 144, 0.2);
 }
 
+.model-actions {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.model-current {
+  border: 1px solid rgba(163, 230, 53, 0.36);
+  border-radius: 999px;
+  padding: 6px 10px;
+  color: #d9f99d;
+  background: rgba(63, 98, 18, 0.2);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.model-load-button {
+  border: 1px solid rgba(103, 232, 249, 0.32);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: #cffafe;
+  background: rgba(14, 116, 144, 0.2);
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.model-load-button:hover {
+  border-color: rgba(103, 232, 249, 0.56);
+  background: rgba(14, 116, 144, 0.32);
+}
+
 .empty-panel {
   padding: 22px;
   color: #91a2b8;
@@ -389,5 +422,10 @@ h1 {
   .model-card {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .model-actions {
+    align-items: flex-start;
+    flex-wrap: wrap;
   }
 }
