@@ -362,6 +362,62 @@ describe('voiceChangerStore', () => {
     ])
   })
 
+  it('读取并保存输入阈值参数', async () => {
+    useVoiceChangerStore.setState(useVoiceChangerStore.getInitialState())
+    const savedParameters: BackendConversionParameters[] = []
+    const client: BackendClient = {
+      loadSnapshot: async () => {
+        throw new Error('本测试不应读取状态快照')
+      },
+      loadModels: async () => ({ modelCount: 0, models: [] }),
+      loadEnvironment: async () => ({
+        ffmpeg: {
+          available: true,
+          path: 'C:/tools/ffmpeg/bin/ffmpeg.exe',
+          message: 'ffmpeg 已就绪',
+        },
+        cuda: {
+          available: true,
+          path: 'torch.cuda',
+          message: 'CUDA 已就绪',
+        },
+      }),
+      loadModel: async () => ({
+        running: false,
+        configured: true,
+        latencyMs: 0,
+        selectedModel: 'demo.pth',
+        lastError: null,
+      }),
+      loadParameters: async () => ({
+        ...defaultParameters,
+        pitchSemitones: 4,
+        indexRate: 0.66,
+        protect: 0.18,
+        inputThresholdDb: -38,
+      }),
+      saveParameters: async (parameters: BackendConversionParameters) => {
+        savedParameters.push(parameters)
+        return parameters
+      },
+    }
+
+    await useVoiceChangerStore.getState().loadParameters(client)
+    await useVoiceChangerStore.getState().saveInputThresholdDb(-52, client)
+
+    expect(useVoiceChangerStore.getState().inputThresholdDb).toBe(-52)
+    expect(useVoiceChangerStore.getState().parametersError).toBeNull()
+    expect(savedParameters).toEqual([
+      {
+        ...defaultParameters,
+        pitchSemitones: 4,
+        indexRate: 0.66,
+        protect: 0.18,
+        inputThresholdDb: -52,
+      },
+    ])
+  })
+
   it('从后端读取 ffmpeg 环境状态并记录缺失提示', async () => {
     useVoiceChangerStore.setState(useVoiceChangerStore.getInitialState())
     const client: BackendClient = {

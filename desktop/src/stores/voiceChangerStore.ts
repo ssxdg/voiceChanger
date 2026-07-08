@@ -36,6 +36,7 @@ type VoiceChangerState = {
   pitchSemitones: number
   indexRate: number
   protect: number
+  inputThresholdDb: number
   parametersError: string | null
   ffmpegAvailable: boolean | null
   ffmpegMessage: string
@@ -50,6 +51,7 @@ type VoiceChangerState = {
   savePitchSemitones: (pitchSemitones: number, client?: BackendClient) => Promise<void>
   saveIndexRate: (indexRate: number, client?: BackendClient) => Promise<void>
   saveProtect: (protect: number, client?: BackendClient) => Promise<void>
+  saveInputThresholdDb: (inputThresholdDb: number, client?: BackendClient) => Promise<void>
   loadEnvironment: (client?: BackendClient) => Promise<void>
 }
 
@@ -75,6 +77,7 @@ export const useVoiceChangerStore = create<VoiceChangerState>()(
       pitchSemitones: defaultConversionParameters.pitchSemitones,
       indexRate: defaultConversionParameters.indexRate,
       protect: defaultConversionParameters.protect,
+      inputThresholdDb: defaultConversionParameters.inputThresholdDb,
       parametersError: null,
       ffmpegAvailable: null,
       ffmpegMessage: '等待 ffmpeg 检测',
@@ -156,6 +159,7 @@ export const useVoiceChangerStore = create<VoiceChangerState>()(
             pitchSemitones: parameters.pitchSemitones,
             indexRate: parameters.indexRate,
             protect: parameters.protect,
+            inputThresholdDb: parameters.inputThresholdDb,
             parametersError: null,
           })
         } catch (error) {
@@ -227,6 +231,27 @@ export const useVoiceChangerStore = create<VoiceChangerState>()(
           })
         }
       },
+      saveInputThresholdDb: async (inputThresholdDb, client = backendClient) => {
+        try {
+          // 输入阈值控制噪声门触发点，和其他推理参数一起保存可避免后端配置被局部覆盖。
+          const nextParameters = {
+            ...get().conversionParameters,
+            inputThresholdDb,
+          }
+          const savedParameters = await client.saveParameters(nextParameters)
+
+          set({
+            conversionParameters: savedParameters,
+            inputThresholdDb: savedParameters.inputThresholdDb,
+            parametersError: null,
+          })
+        } catch (error) {
+          // 保存失败时保留当前滑块位置并展示错误，方便用户按当前值重试。
+          set({
+            parametersError: error instanceof Error ? error.message : '保存输入阈值参数失败',
+          })
+        }
+      },
       loadEnvironment: async (client = backendClient) => {
         try {
           const environment = await client.loadEnvironment()
@@ -264,6 +289,7 @@ export const useVoiceChangerStore = create<VoiceChangerState>()(
         pitchSemitones: state.pitchSemitones,
         indexRate: state.indexRate,
         protect: state.protect,
+        inputThresholdDb: state.inputThresholdDb,
       }),
     },
   ),

@@ -166,11 +166,13 @@ function SettingsPage() {
     pitchSemitones,
     indexRate,
     protect,
+    inputThresholdDb,
     parametersError,
     loadParameters,
     savePitchSemitones,
     saveIndexRate,
     saveProtect,
+    saveInputThresholdDb,
   } = useVoiceChangerStore()
 
   useEffect(() => {
@@ -241,6 +243,24 @@ function SettingsPage() {
             onChange={(event) => {
               // 保护值用于减少破音，保存到后端后可和实时推理参数保持一致。
               void saveProtect(Number(event.currentTarget.value))
+            }}
+          />
+        </div>
+        <div className="parameter-row">
+          <div>
+            <strong>输入阈值调节</strong>
+            <span>输入阈值：{inputThresholdDb} dB</span>
+          </div>
+          <input
+            aria-label="输入阈值调节"
+            max="0"
+            min="-80"
+            step="1"
+            type="range"
+            value={inputThresholdDb}
+            onChange={(event) => {
+              // 输入阈值用于降低环境噪声触发，按 dB 整数保存便于后端直接应用。
+              void saveInputThresholdDb(Number(event.currentTarget.value))
             }}
           />
         </div>
