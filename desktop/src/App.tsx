@@ -162,7 +162,8 @@ function PlaceholderPage({ title }: { title: string }) {
 }
 
 function SettingsPage() {
-  const { pitchSemitones, parametersError, loadParameters, savePitchSemitones } = useVoiceChangerStore()
+  const { pitchSemitones, indexRate, parametersError, loadParameters, savePitchSemitones, saveIndexRate } =
+    useVoiceChangerStore()
 
   useEffect(() => {
     // 参数设置页进入时单独读取后端参数，避免首屏控制台刷新覆盖用户正在调整的滑块值。
@@ -196,6 +197,24 @@ function SettingsPage() {
             value={pitchSemitones}
             onChange={(event) => {
               void savePitchSemitones(Number(event.currentTarget.value))
+            }}
+          />
+        </div>
+        <div className="parameter-row">
+          <div>
+            <strong>检索率调节</strong>
+            <span>检索率：{Math.round(indexRate * 100)}%</span>
+          </div>
+          <input
+            aria-label="检索率调节"
+            max="1"
+            min="0"
+            step="0.01"
+            type="range"
+            value={indexRate}
+            onChange={(event) => {
+              // 滑块变化立即保存到后端，保证实时链路后续启动时使用最新的检索率配置。
+              void saveIndexRate(Number(event.currentTarget.value))
             }}
           />
         </div>

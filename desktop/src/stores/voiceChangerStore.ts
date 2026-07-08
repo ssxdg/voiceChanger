@@ -34,6 +34,7 @@ type VoiceChangerState = {
   modelLoadError: string | null
   conversionParameters: BackendConversionParameters
   pitchSemitones: number
+  indexRate: number
   parametersError: string | null
   ffmpegAvailable: boolean | null
   ffmpegMessage: string
@@ -46,6 +47,7 @@ type VoiceChangerState = {
   loadSelectedModel: (modelPath: string, client?: BackendClient) => Promise<void>
   loadParameters: (client?: BackendClient) => Promise<void>
   savePitchSemitones: (pitchSemitones: number, client?: BackendClient) => Promise<void>
+  saveIndexRate: (indexRate: number, client?: BackendClient) => Promise<void>
   loadEnvironment: (client?: BackendClient) => Promise<void>
 }
 
@@ -69,6 +71,7 @@ export const useVoiceChangerStore = create<VoiceChangerState>()(
       modelLoadError: null,
       conversionParameters: defaultConversionParameters,
       pitchSemitones: defaultConversionParameters.pitchSemitones,
+      indexRate: defaultConversionParameters.indexRate,
       parametersError: null,
       ffmpegAvailable: null,
       ffmpegMessage: '等待 ffmpeg 检测',
@@ -148,6 +151,7 @@ export const useVoiceChangerStore = create<VoiceChangerState>()(
           set({
             conversionParameters: parameters,
             pitchSemitones: parameters.pitchSemitones,
+            indexRate: parameters.indexRate,
             parametersError: null,
           })
         } catch (error) {
@@ -174,6 +178,27 @@ export const useVoiceChangerStore = create<VoiceChangerState>()(
           // 保存失败时保留当前滑块值，错误单独展示，避免用户误以为后端已经接受该参数。
           set({
             parametersError: error instanceof Error ? error.message : '保存音调参数失败',
+          })
+        }
+      },
+      saveIndexRate: async (indexRate, client = backendClient) => {
+        try {
+          // 检索率与完整推理参数一起提交，避免只保存单字段时覆盖后端已有的保护度、降噪等设置。
+          const nextParameters = {
+            ...get().conversionParameters,
+            indexRate,
+          }
+          const savedParameters = await client.saveParameters(nextParameters)
+
+          set({
+            conversionParameters: savedParameters,
+            indexRate: savedParameters.indexRate,
+            parametersError: null,
+          })
+        } catch (error) {
+          // 保存失败时保留当前界面数值，只提示错误，避免用户误以为后端已经应用了新的检索率。
+          set({
+            parametersError: error instanceof Error ? error.message : '保存检索率参数失败',
           })
         }
       },
@@ -212,6 +237,7 @@ export const useVoiceChangerStore = create<VoiceChangerState>()(
         isRealtimeActive: state.isRealtimeActive,
         conversionParameters: state.conversionParameters,
         pitchSemitones: state.pitchSemitones,
+        indexRate: state.indexRate,
       }),
     },
   ),
