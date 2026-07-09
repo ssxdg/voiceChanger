@@ -167,12 +167,14 @@ function SettingsPage() {
     indexRate,
     protect,
     inputThresholdDb,
+    outputGainDb,
     parametersError,
     loadParameters,
     savePitchSemitones,
     saveIndexRate,
     saveProtect,
     saveInputThresholdDb,
+    saveOutputGainDb,
   } = useVoiceChangerStore()
 
   useEffect(() => {
@@ -261,6 +263,24 @@ function SettingsPage() {
             onChange={(event) => {
               // 输入阈值用于降低环境噪声触发，按 dB 整数保存便于后端直接应用。
               void saveInputThresholdDb(Number(event.currentTarget.value))
+            }}
+          />
+        </div>
+        <div className="parameter-row">
+          <div>
+            <strong>输出增益调节</strong>
+            <span>输出增益：{outputGainDb} dB</span>
+          </div>
+          <input
+            aria-label="输出增益调节"
+            max="24"
+            min="-24"
+            step="1"
+            type="range"
+            value={outputGainDb}
+            onChange={(event) => {
+              // 输出增益用于控制变声后的音量，按 dB 整数保存便于后端直接应用。
+              void saveOutputGainDb(Number(event.currentTarget.value))
             }}
           />
         </div>

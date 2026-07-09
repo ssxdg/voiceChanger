@@ -37,6 +37,7 @@ type VoiceChangerState = {
   indexRate: number
   protect: number
   inputThresholdDb: number
+  outputGainDb: number
   parametersError: string | null
   ffmpegAvailable: boolean | null
   ffmpegMessage: string
@@ -52,6 +53,7 @@ type VoiceChangerState = {
   saveIndexRate: (indexRate: number, client?: BackendClient) => Promise<void>
   saveProtect: (protect: number, client?: BackendClient) => Promise<void>
   saveInputThresholdDb: (inputThresholdDb: number, client?: BackendClient) => Promise<void>
+  saveOutputGainDb: (outputGainDb: number, client?: BackendClient) => Promise<void>
   loadEnvironment: (client?: BackendClient) => Promise<void>
 }
 
@@ -78,6 +80,7 @@ export const useVoiceChangerStore = create<VoiceChangerState>()(
       indexRate: defaultConversionParameters.indexRate,
       protect: defaultConversionParameters.protect,
       inputThresholdDb: defaultConversionParameters.inputThresholdDb,
+      outputGainDb: defaultConversionParameters.outputGainDb,
       parametersError: null,
       ffmpegAvailable: null,
       ffmpegMessage: '等待 ffmpeg 检测',
@@ -160,6 +163,7 @@ export const useVoiceChangerStore = create<VoiceChangerState>()(
             indexRate: parameters.indexRate,
             protect: parameters.protect,
             inputThresholdDb: parameters.inputThresholdDb,
+            outputGainDb: parameters.outputGainDb,
             parametersError: null,
           })
         } catch (error) {
@@ -252,6 +256,27 @@ export const useVoiceChangerStore = create<VoiceChangerState>()(
           })
         }
       },
+      saveOutputGainDb: async (outputGainDb, client = backendClient) => {
+        try {
+          // 输出增益直接影响变声后音量，和完整推理参数一起提交，避免覆盖其他滑块设置。
+          const nextParameters = {
+            ...get().conversionParameters,
+            outputGainDb,
+          }
+          const savedParameters = await client.saveParameters(nextParameters)
+
+          set({
+            conversionParameters: savedParameters,
+            outputGainDb: savedParameters.outputGainDb,
+            parametersError: null,
+          })
+        } catch (error) {
+          // 保存失败时保留当前滑块位置并展示错误，便于用户按当前增益值重试。
+          set({
+            parametersError: error instanceof Error ? error.message : '保存输出增益参数失败',
+          })
+        }
+      },
       loadEnvironment: async (client = backendClient) => {
         try {
           const environment = await client.loadEnvironment()
@@ -290,6 +315,7 @@ export const useVoiceChangerStore = create<VoiceChangerState>()(
         indexRate: state.indexRate,
         protect: state.protect,
         inputThresholdDb: state.inputThresholdDb,
+        outputGainDb: state.outputGainDb,
       }),
     },
   ),
