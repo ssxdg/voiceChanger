@@ -101,7 +101,6 @@ export const useVoiceChangerStore = create<VoiceChangerState>()(
           set({
             backendConnected: true,
             backendError: snapshot.status.lastError,
-            gpuStatus: '等待 GPU 检测',
             isRealtimeActive: snapshot.status.running,
             latencyMs: snapshot.status.latencyMs,
             selectedModelName: snapshot.status.selectedModel || '未选择模型',
@@ -114,7 +113,6 @@ export const useVoiceChangerStore = create<VoiceChangerState>()(
           set({
             backendConnected: false,
             backendError: error instanceof Error ? error.message : '连接本地后端失败',
-            gpuStatus: '等待环境检测',
             isRealtimeActive: false,
           })
         }
@@ -311,6 +309,8 @@ export const useVoiceChangerStore = create<VoiceChangerState>()(
             ffmpegMessage: environment.ffmpeg.message,
             cudaAvailable: environment.cuda.available,
             cudaMessage: environment.cuda.message,
+            // 控制台状态卡只展示短状态，详细 CUDA 修复建议保留在 cudaMessage 和告警区域。
+            gpuStatus: environment.cuda.available ? 'CUDA 已就绪' : 'CPU/DirectML 降级',
             environmentError: null,
           })
         } catch (error) {
@@ -320,6 +320,7 @@ export const useVoiceChangerStore = create<VoiceChangerState>()(
             ffmpegMessage: '无法读取 ffmpeg 状态',
             cudaAvailable: false,
             cudaMessage: '无法读取 CUDA 状态',
+            gpuStatus: '等待环境检测',
             environmentError: error instanceof Error ? error.message : '读取运行环境失败',
           })
         }

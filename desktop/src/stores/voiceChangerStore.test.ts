@@ -566,5 +566,6 @@ describe('voiceChangerStore', () => {
     expect(useVoiceChangerStore.getState().cudaMessage).toBe(
       'CUDA 不可用，将使用 CPU 或 DirectML 方案；如需 NVIDIA GPU 加速，请安装匹配的显卡驱动和 CUDA 版 PyTorch',
     )
+    expect(useVoiceChangerStore.getState().gpuStatus).toBe('CPU/DirectML 降级')
   })
 })

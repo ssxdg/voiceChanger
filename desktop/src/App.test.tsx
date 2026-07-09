@@ -134,6 +134,7 @@ describe('App', () => {
 
     await waitFor(() => expect(screen.getByText('后端已连接')).toBeInTheDocument())
     expect(screen.getByText('虚拟输出：1 个')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText('CUDA 已就绪')).toBeInTheDocument())
   })
 
   it('控制台没有模型时展示缺少模型提示', async () => {
