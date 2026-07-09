@@ -168,6 +168,7 @@ function SettingsPage() {
     protect,
     inputThresholdDb,
     outputGainDb,
+    denoise,
     parametersError,
     loadParameters,
     savePitchSemitones,
@@ -175,6 +176,7 @@ function SettingsPage() {
     saveProtect,
     saveInputThresholdDb,
     saveOutputGainDb,
+    saveDenoise,
   } = useVoiceChangerStore()
 
   useEffect(() => {
@@ -283,6 +285,24 @@ function SettingsPage() {
               void saveOutputGainDb(Number(event.currentTarget.value))
             }}
           />
+        </div>
+        <div className="parameter-row">
+          <div>
+            <strong>降噪开关</strong>
+            <span>降噪：{denoise ? '开启' : '关闭'}</span>
+          </div>
+          <label className="parameter-toggle">
+            <input
+              aria-label="降噪开关"
+              checked={denoise}
+              type="checkbox"
+              onChange={(event) => {
+                // 降噪是二值推理参数，切换后立即保存，保证实时链路启动时使用最新降噪配置。
+                void saveDenoise(event.currentTarget.checked)
+              }}
+            />
+            <span>{denoise ? '开启' : '关闭'}</span>
+          </label>
         </div>
       </section>
     </main>

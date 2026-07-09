@@ -625,4 +625,62 @@ describe('App', () => {
       }),
     ])
   })
+
+  it('设置页可读取并保存降噪开关', async () => {
+    const savedParameters: string[] = []
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input)
+        // 该用例只验证设置页参数读写链路，所以用内存响应模拟后端，避免测试依赖本地 Python 服务状态。
+        if (url.endsWith('/parameters') && init?.method === 'POST') {
+          savedParameters.push(String(init.body ?? ''))
+          return new Response(String(init.body ?? '{}'), { status: 200 })
+        }
+
+        if (url.endsWith('/parameters')) {
+          return new Response(
+            JSON.stringify({
+              pitchSemitones: 4,
+              indexRate: 0.66,
+              protect: 0.18,
+              inputThresholdDb: -38,
+              outputGainDb: 6,
+              denoise: true,
+            }),
+            { status: 200 },
+          )
+        }
+
+        return new Response(
+          JSON.stringify({
+            running: false,
+            configured: false,
+            latencyMs: 0,
+            selectedModel: '',
+            lastError: null,
+          }),
+          { status: 200 },
+        )
+      }),
+    )
+
+    render(<App />)
+    fireEvent.click(screen.getByRole('link', { name: '设置' }))
+
+    await waitFor(() => expect(screen.getByText('降噪：开启')).toBeInTheDocument())
+    fireEvent.click(screen.getByLabelText('降噪开关'))
+
+    await waitFor(() => expect(screen.getByText('降噪：关闭')).toBeInTheDocument())
+    expect(savedParameters).toEqual([
+      JSON.stringify({
+        pitchSemitones: 4,
+        indexRate: 0.66,
+        protect: 0.18,
+        inputThresholdDb: -38,
+        outputGainDb: 6,
+        denoise: false,
+      }),
+    ])
+  })
 })

@@ -436,6 +436,23 @@ h1 {
   accent-color: #67e8f9;
 }
 
+.parameter-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: 10px;
+  min-height: 36px;
+  color: #dbeafe;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.parameter-toggle input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  accent-color: #67e8f9;
+}
+
 @media (max-width: 960px) {
   .app-frame {
     grid-template-columns: 1fr;

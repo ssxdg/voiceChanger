@@ -38,6 +38,7 @@ type VoiceChangerState = {
   protect: number
   inputThresholdDb: number
   outputGainDb: number
+  denoise: boolean
   parametersError: string | null
   ffmpegAvailable: boolean | null
   ffmpegMessage: string
@@ -54,6 +55,7 @@ type VoiceChangerState = {
   saveProtect: (protect: number, client?: BackendClient) => Promise<void>
   saveInputThresholdDb: (inputThresholdDb: number, client?: BackendClient) => Promise<void>
   saveOutputGainDb: (outputGainDb: number, client?: BackendClient) => Promise<void>
+  saveDenoise: (denoise: boolean, client?: BackendClient) => Promise<void>
   loadEnvironment: (client?: BackendClient) => Promise<void>
 }
 
@@ -81,6 +83,7 @@ export const useVoiceChangerStore = create<VoiceChangerState>()(
       protect: defaultConversionParameters.protect,
       inputThresholdDb: defaultConversionParameters.inputThresholdDb,
       outputGainDb: defaultConversionParameters.outputGainDb,
+      denoise: defaultConversionParameters.denoise,
       parametersError: null,
       ffmpegAvailable: null,
       ffmpegMessage: '等待 ffmpeg 检测',
@@ -164,6 +167,7 @@ export const useVoiceChangerStore = create<VoiceChangerState>()(
             protect: parameters.protect,
             inputThresholdDb: parameters.inputThresholdDb,
             outputGainDb: parameters.outputGainDb,
+            denoise: parameters.denoise,
             parametersError: null,
           })
         } catch (error) {
@@ -277,6 +281,27 @@ export const useVoiceChangerStore = create<VoiceChangerState>()(
           })
         }
       },
+      saveDenoise: async (denoise, client = backendClient) => {
+        try {
+          // 降噪开关会影响麦克风底噪处理，必须与完整推理参数一起提交，避免覆盖其它已调好的参数。
+          const nextParameters = {
+            ...get().conversionParameters,
+            denoise,
+          }
+          const savedParameters = await client.saveParameters(nextParameters)
+
+          set({
+            conversionParameters: savedParameters,
+            denoise: savedParameters.denoise,
+            parametersError: null,
+          })
+        } catch (error) {
+          // 保存失败时保留当前开关状态并展示错误，用户可以按当前可见选择直接重试。
+          set({
+            parametersError: error instanceof Error ? error.message : '保存降噪开关失败',
+          })
+        }
+      },
       loadEnvironment: async (client = backendClient) => {
         try {
           const environment = await client.loadEnvironment()
@@ -316,6 +341,7 @@ export const useVoiceChangerStore = create<VoiceChangerState>()(
         protect: state.protect,
         inputThresholdDb: state.inputThresholdDb,
         outputGainDb: state.outputGainDb,
+        denoise: state.denoise,
       }),
     },
   ),
