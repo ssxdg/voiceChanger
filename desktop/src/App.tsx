@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState, type ChangeEvent } from 'react'
 import { BrowserRouter, NavLink, Route, Routes } from 'react-router-dom'
 import { useVoiceChangerStore } from './stores/voiceChangerStore'
 import './App.css'
@@ -16,6 +16,34 @@ const statusCards = [
   { label: '虚拟麦克风输出', valueKey: 'outputDeviceName' },
   { label: '实时延迟', valueKey: 'latencyMs' },
 ] as const
+
+const supportedAudioExtensions = ['wav', 'mp3', 'flac'] as const
+
+type AudioFileSummary = {
+  name: string
+  extension: string
+  sizeLabel: string
+}
+
+function getAudioFileExtension(fileName: string) {
+  // 桌面端选择文件时不同系统返回的 MIME 可能不稳定，因此用扩展名做第一层格式校验。
+  const extension = fileName.split('.').pop()
+
+  return extension ? extension.toLowerCase() : ''
+}
+
+function formatAudioFileSize(size: number) {
+  // 文件导入阶段只展示摘要，不读取音频内容；统一格式化大小可以避免界面出现裸数字。
+  if (size < 1024) {
+    return `${size} B`
+  }
+
+  if (size < 1024 * 1024) {
+    return `${(size / 1024).toFixed(1)} KB`
+  }
+
+  return `${(size / 1024 / 1024).toFixed(1)} MB`
+}
 
 function DashboardPage() {
   const {
@@ -142,20 +170,6 @@ function DashboardPage() {
             后续模块会从本地 Python 服务读取 CUDA、DirectML、ffmpeg 和虚拟声卡检测结果。
           </p>
         </aside>
-      </section>
-    </main>
-  )
-}
-
-function PlaceholderPage({ title }: { title: string }) {
-  return (
-    <main className="dashboard-shell">
-      <section className="hero-panel compact">
-        <div>
-          <p className="section-label">模块占位</p>
-          <h1>{title}</h1>
-          <p className="hero-copy">该页面已接入路由，后续按计划逐步开发具体功能。</p>
-        </div>
       </section>
     </main>
   )
@@ -309,6 +323,80 @@ function SettingsPage() {
   )
 }
 
+function FileConversionPage() {
+  const [selectedAudioFile, setSelectedAudioFile] = useState<AudioFileSummary | null>(null)
+  const [fileImportError, setFileImportError] = useState<string | null>(null)
+
+  const handleAudioFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.currentTarget.files?.[0]
+
+    if (!file) {
+      return
+    }
+
+    const extension = getAudioFileExtension(file.name)
+    const isSupported = supportedAudioExtensions.includes(extension as (typeof supportedAudioExtensions)[number])
+
+    if (!isSupported) {
+      // 不支持的文件不能保留在导入状态里，避免后续“执行文件变声”模块误处理无效输入。
+      setSelectedAudioFile(null)
+      setFileImportError('仅支持 wav、mp3、flac 音频文件')
+      return
+    }
+
+    // 这里只记录文件元数据，真实音频读取和后端处理会在“执行文件变声”模块中接入。
+    setSelectedAudioFile({
+      name: file.name,
+      extension: extension.toUpperCase(),
+      sizeLabel: formatAudioFileSize(file.size),
+    })
+    setFileImportError(null)
+  }
+
+  return (
+    <main className="dashboard-shell">
+      <section className="hero-panel compact">
+        <div>
+          <p className="section-label">文件变声</p>
+          <h1>文件变声</h1>
+          <p className="hero-copy">导入 wav、mp3、flac 音频文件，后续模块会接入离线变声处理和导出。</p>
+        </div>
+      </section>
+
+      <section className="file-import-panel" aria-label="导入音频文件">
+        <div>
+          <strong>导入音频文件</strong>
+          <span>支持格式：wav、mp3、flac</span>
+        </div>
+        <label className="file-upload-control">
+          <input
+            accept=".wav,.mp3,.flac,audio/wav,audio/mpeg,audio/flac"
+            aria-label="选择音频文件"
+            type="file"
+            onChange={handleAudioFileChange}
+          />
+          <span>选择音频文件</span>
+        </label>
+
+        {fileImportError ? <p className="error-text">{fileImportError}</p> : null}
+
+        {selectedAudioFile ? (
+          <div className="file-summary" aria-label="已导入音频摘要">
+            <strong>已选择音频：{selectedAudioFile.name}</strong>
+            <span>格式：{selectedAudioFile.extension}</span>
+            <span>大小：{selectedAudioFile.sizeLabel}</span>
+          </div>
+        ) : (
+          <div className="file-empty-state">
+            <strong>尚未选择音频文件</strong>
+            <span>请选择一个待变声的 wav、mp3 或 flac 文件</span>
+          </div>
+        )}
+      </section>
+    </main>
+  )
+}
+
 function ModelsPage() {
   const { selectedModelName, modelItems, modelCount, modelListError, modelLoadError, loadModels, loadSelectedModel } =
     useVoiceChangerStore()
@@ -396,7 +484,7 @@ function AppShell() {
       <Routes>
         <Route path="/" element={<DashboardPage />} />
         <Route path="/models" element={<ModelsPage />} />
-        <Route path="/files" element={<PlaceholderPage title="文件变声" />} />
+        <Route path="/files" element={<FileConversionPage />} />
         <Route path="/settings" element={<SettingsPage />} />
       </Routes>
     </div>

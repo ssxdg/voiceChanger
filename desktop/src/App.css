@@ -398,6 +398,86 @@ h1 {
   font-size: 13px;
 }
 
+.file-import-panel {
+  display: grid;
+  gap: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 8px;
+  padding: 22px;
+  background: rgba(15, 23, 42, 0.72);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.22);
+}
+
+.file-import-panel strong,
+.file-import-panel span {
+  display: block;
+}
+
+.file-import-panel > div:first-child strong {
+  color: #f8fafc;
+  font-size: 18px;
+}
+
+.file-import-panel > div:first-child span,
+.file-empty-state span {
+  margin-top: 8px;
+  color: #91a2b8;
+  font-size: 13px;
+}
+
+.file-upload-control {
+  position: relative;
+  display: inline-flex;
+  justify-self: start;
+  align-items: center;
+  border: 1px solid rgba(103, 232, 249, 0.34);
+  border-radius: 8px;
+  min-height: 42px;
+  padding: 0 14px;
+  color: #cffafe;
+  background: rgba(14, 116, 144, 0.2);
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.file-upload-control:hover {
+  border-color: rgba(103, 232, 249, 0.56);
+  background: rgba(14, 116, 144, 0.32);
+}
+
+.file-upload-control input[type='file'] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.file-summary,
+.file-empty-state {
+  border-top: 1px solid rgba(148, 163, 184, 0.16);
+  padding-top: 16px;
+}
+
+.file-summary {
+  display: grid;
+  gap: 8px;
+}
+
+.file-summary strong {
+  color: #f8fafc;
+  overflow-wrap: anywhere;
+}
+
+.file-summary span {
+  color: #a8b3c5;
+  font-size: 13px;
+}
+
+.file-empty-state strong {
+  color: #f8fafc;
+}
+
 .settings-panel {
   display: grid;
   gap: 18px;

@@ -341,6 +341,31 @@ describe('App', () => {
     expect(screen.getByText('请将 .pth 模型放入 assets/weights 后刷新模型列表')).toBeInTheDocument()
   })
 
+  it('文件变声页可导入支持的音频文件', async () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('link', { name: '文件变声' }))
+
+    // 使用浏览器 File 对象模拟桌面端选择结果，验证页面只依赖用户选择的文件元数据。
+    const audioFile = new File(['demo'], 'voice-demo.mp3', { type: 'audio/mpeg' })
+    fireEvent.change(screen.getByLabelText('选择音频文件'), { target: { files: [audioFile] } })
+
+    expect(screen.getByText('已选择音频：voice-demo.mp3')).toBeInTheDocument()
+    expect(screen.getByText('格式：MP3')).toBeInTheDocument()
+    expect(screen.getByText('大小：4 B')).toBeInTheDocument()
+  })
+
+  it('文件变声页会拒绝不支持的音频格式', async () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('link', { name: '文件变声' }))
+
+    // 非音频扩展名不能进入后续变声流程，避免用户误以为任意文件都可以处理。
+    const textFile = new File(['demo'], 'readme.txt', { type: 'text/plain' })
+    fireEvent.change(screen.getByLabelText('选择音频文件'), { target: { files: [textFile] } })
+
+    expect(screen.getByText('仅支持 wav、mp3、flac 音频文件')).toBeInTheDocument()
+    expect(screen.queryByText(/已选择音频：/)).not.toBeInTheDocument()
+  })
+
   it('设置页可读取并保存音调调节', async () => {
     const savedParameters: string[] = []
     vi.stubGlobal(
