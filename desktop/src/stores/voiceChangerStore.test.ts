@@ -20,6 +20,20 @@ const parameterClientMethods = {
     selectedModel: 'demo.pth',
     lastError: null,
   }),
+  startRealtime: async () => ({
+    running: true,
+    configured: true,
+    latencyMs: 32,
+    selectedModel: 'demo.pth',
+    lastError: null,
+  }),
+  stopRealtime: async () => ({
+    running: false,
+    configured: true,
+    latencyMs: 0,
+    selectedModel: 'demo.pth',
+    lastError: null,
+  }),
   loadParameters: async () => defaultParameters,
   saveParameters: async (parameters: BackendConversionParameters) => parameters,
 }
@@ -34,18 +48,79 @@ describe('voiceChangerStore', () => {
     expect(useVoiceChangerStore.getState().isRealtimeActive).toBe(false)
   })
 
-  it('切换实时变声状态时保留当前设备选择', () => {
+  it('通过后端启动实时变声时保留当前设备选择', async () => {
     useVoiceChangerStore.setState({
       ...useVoiceChangerStore.getInitialState(),
       inputDeviceName: 'Realtek Microphone',
       outputDeviceName: 'VB-CABLE Input',
     })
+    const realtimeRequests: string[] = []
+    const client: BackendClient = {
+      loadSnapshot: async () => ({
+        status: {
+          running: false,
+          configured: true,
+          latencyMs: 0,
+          selectedModel: 'demo.pth',
+          lastError: null,
+        },
+        devices: {
+          inputDevices: [],
+          outputDevices: [],
+          virtualOutputDevices: [],
+        },
+      }),
+      loadModels: async () => ({ modelCount: 0, models: [] }),
+      loadEnvironment: async () => ({
+        ffmpeg: {
+          available: true,
+          path: 'C:/tools/ffmpeg/bin/ffmpeg.exe',
+          message: 'ffmpeg 已就绪',
+        },
+        cuda: {
+          available: true,
+          path: 'torch.cuda',
+          message: 'CUDA 已就绪',
+        },
+      }),
+      loadModel: async () => ({
+        running: false,
+        configured: true,
+        latencyMs: 0,
+        selectedModel: 'demo.pth',
+        lastError: null,
+      }),
+      startRealtime: async () => {
+        realtimeRequests.push('start')
+        return {
+          running: true,
+          configured: true,
+          latencyMs: 32,
+          selectedModel: 'demo.pth',
+          lastError: null,
+        }
+      },
+      stopRealtime: async () => {
+        realtimeRequests.push('stop')
+        return {
+          running: false,
+          configured: true,
+          latencyMs: 0,
+          selectedModel: 'demo.pth',
+          lastError: null,
+        }
+      },
+      loadParameters: async () => defaultParameters,
+      saveParameters: async (parameters: BackendConversionParameters) => parameters,
+    }
 
-    useVoiceChangerStore.getState().toggleRealtime()
+    await useVoiceChangerStore.getState().toggleRealtime(client)
 
     expect(useVoiceChangerStore.getState().isRealtimeActive).toBe(true)
+    expect(useVoiceChangerStore.getState().latencyMs).toBe(32)
     expect(useVoiceChangerStore.getState().inputDeviceName).toBe('Realtek Microphone')
     expect(useVoiceChangerStore.getState().outputDeviceName).toBe('VB-CABLE Input')
+    expect(realtimeRequests).toEqual(['start'])
   })
 
   it('从后端快照同步运行状态和设备候选列表', async () => {
@@ -192,6 +267,8 @@ describe('voiceChangerStore', () => {
           lastError: null,
         }
       },
+      startRealtime: parameterClientMethods.startRealtime,
+      stopRealtime: parameterClientMethods.stopRealtime,
       loadParameters: async () => defaultParameters,
       saveParameters: async (parameters: BackendConversionParameters) => parameters,
     }
@@ -231,6 +308,8 @@ describe('voiceChangerStore', () => {
         selectedModel: 'demo.pth',
         lastError: null,
       }),
+      startRealtime: parameterClientMethods.startRealtime,
+      stopRealtime: parameterClientMethods.stopRealtime,
       loadParameters: async () => ({
         ...defaultParameters,
         pitchSemitones: 4,
@@ -283,6 +362,8 @@ describe('voiceChangerStore', () => {
         selectedModel: 'demo.pth',
         lastError: null,
       }),
+      startRealtime: parameterClientMethods.startRealtime,
+      stopRealtime: parameterClientMethods.stopRealtime,
       loadParameters: async () => ({
         ...defaultParameters,
         pitchSemitones: 4,
@@ -335,6 +416,8 @@ describe('voiceChangerStore', () => {
         selectedModel: 'demo.pth',
         lastError: null,
       }),
+      startRealtime: parameterClientMethods.startRealtime,
+      stopRealtime: parameterClientMethods.stopRealtime,
       loadParameters: async () => ({
         ...defaultParameters,
         pitchSemitones: 4,
@@ -389,6 +472,8 @@ describe('voiceChangerStore', () => {
         selectedModel: 'demo.pth',
         lastError: null,
       }),
+      startRealtime: parameterClientMethods.startRealtime,
+      stopRealtime: parameterClientMethods.stopRealtime,
       loadParameters: async () => ({
         ...defaultParameters,
         pitchSemitones: 4,
@@ -445,6 +530,8 @@ describe('voiceChangerStore', () => {
         selectedModel: 'demo.pth',
         lastError: null,
       }),
+      startRealtime: parameterClientMethods.startRealtime,
+      stopRealtime: parameterClientMethods.stopRealtime,
       loadParameters: async () => ({
         ...defaultParameters,
         pitchSemitones: 4,
@@ -503,6 +590,8 @@ describe('voiceChangerStore', () => {
         selectedModel: 'demo.pth',
         lastError: null,
       }),
+      startRealtime: parameterClientMethods.startRealtime,
+      stopRealtime: parameterClientMethods.stopRealtime,
       loadParameters: async () => ({
         ...defaultParameters,
         pitchSemitones: 4,

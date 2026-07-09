@@ -137,6 +137,92 @@ describe('App', () => {
     await waitFor(() => expect(screen.getByText('CUDA 已就绪')).toBeInTheDocument())
   })
 
+  it('点击开始和停止变声时调用本地后端实时控制接口', async () => {
+    const realtimeRequests: string[] = []
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input)
+        if (url.endsWith('/realtime/start')) {
+          realtimeRequests.push('/realtime/start')
+          return new Response(
+            JSON.stringify({
+              running: true,
+              configured: true,
+              latencyMs: 24,
+              selectedModel: 'demo.pth',
+              lastError: null,
+            }),
+            { status: 200 },
+          )
+        }
+
+        if (url.endsWith('/realtime/stop')) {
+          realtimeRequests.push('/realtime/stop')
+          return new Response(
+            JSON.stringify({
+              running: false,
+              configured: true,
+              latencyMs: 0,
+              selectedModel: 'demo.pth',
+              lastError: null,
+            }),
+            { status: 200 },
+          )
+        }
+
+        if (url.endsWith('/status')) {
+          return new Response(
+            JSON.stringify({
+              running: false,
+              configured: true,
+              latencyMs: 0,
+              selectedModel: 'demo.pth',
+              lastError: null,
+            }),
+            { status: 200 },
+          )
+        }
+
+        if (url.endsWith('/models')) {
+          return new Response(JSON.stringify({ modelCount: 1, models: [] }), { status: 200 })
+        }
+
+        if (url.endsWith('/environment')) {
+          return new Response(
+            JSON.stringify({
+              ffmpeg: {
+                available: true,
+                path: 'C:/tools/ffmpeg/bin/ffmpeg.exe',
+                message: 'ffmpeg 已就绪',
+              },
+              cuda: {
+                available: true,
+                path: 'torch.cuda',
+                message: 'CUDA 已就绪',
+              },
+            }),
+            { status: 200 },
+          )
+        }
+
+        return new Response(JSON.stringify({ inputDevices: [], outputDevices: [], virtualOutputDevices: [] }), {
+          status: 200,
+        })
+      }),
+    )
+
+    render(<App />)
+
+    await waitFor(() => expect(screen.getByText('demo.pth')).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: '开始变声' }))
+    await waitFor(() => expect(screen.getByRole('button', { name: '停止变声' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: '停止变声' }))
+    await waitFor(() => expect(screen.getByRole('button', { name: '开始变声' })).toBeInTheDocument())
+
+    expect(realtimeRequests).toEqual(['/realtime/start', '/realtime/stop'])
+  })
+
   it('控制台没有模型时展示缺少模型提示', async () => {
     render(<App />)
 

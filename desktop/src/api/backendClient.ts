@@ -53,6 +53,8 @@ export type BackendClient = {
   loadSnapshot: () => Promise<BackendSnapshot>
   loadModels: () => Promise<BackendModelCatalog>
   loadModel: (modelPath: string) => Promise<BackendStatus>
+  startRealtime: () => Promise<BackendStatus>
+  stopRealtime: () => Promise<BackendStatus>
   loadEnvironment: () => Promise<BackendEnvironment>
   loadParameters: () => Promise<BackendConversionParameters>
   saveParameters: (parameters: BackendConversionParameters) => Promise<BackendConversionParameters>
@@ -123,6 +125,18 @@ export function createBackendClient(
         method: 'POST',
         headers: { 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify({ modelPath }),
+      })
+    },
+    async startRealtime() {
+      // 启动按钮必须走本地后端契约，让后续真实采集和推理链路可以挂在同一个入口上。
+      return requestJson<BackendStatus>(transport, `${normalizedBaseUrl}/realtime/start`, {
+        method: 'POST',
+      })
+    },
+    async stopRealtime() {
+      // 停止按钮同样由后端收敛运行状态，避免前端显示已停止但后台仍在运行的状态漂移。
+      return requestJson<BackendStatus>(transport, `${normalizedBaseUrl}/realtime/stop`, {
+        method: 'POST',
       })
     },
     async loadEnvironment() {

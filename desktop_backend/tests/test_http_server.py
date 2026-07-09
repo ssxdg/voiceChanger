@@ -106,6 +106,18 @@ class HttpServerTest(unittest.TestCase):
         payload = json.loads(error.exception.read().decode("utf-8"))
         self.assertEqual(payload, {"error": "模型不存在或未导入"})
 
+    def test_post_realtime_start_and_stop_updates_running_state(self):
+        self._post_json("/models/load", {"modelPath": "E:/LLM/bianshengqi/assets/weights/demo.pth"})
+
+        started = self._post_json("/realtime/start", {})
+        stopped = self._post_json("/realtime/stop", {})
+
+        self.assertEqual(started["running"], True)
+        self.assertEqual(started["configured"], True)
+        self.assertEqual(started["selectedModel"], "demo.pth")
+        self.assertEqual(stopped["running"], False)
+        self.assertEqual(self._get_json("/status")["running"], False)
+
     def test_get_and_post_parameters_as_json(self):
         self.assertEqual(
             self._get_json("/parameters"),

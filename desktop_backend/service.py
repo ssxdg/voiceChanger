@@ -77,6 +77,22 @@ class BackendService:
         self._state.last_error = None
         return self.status()
 
+    def start_realtime(self) -> dict[str, object]:
+        # 启停接口先建立桌面端控制契约，真实麦克风采集和 RVC 推理会在后续实时链路模块接入。
+        if not self._state.configured or not self._state.selected_model:
+            raise ValueError("请先选择模型后再启动实时变声")
+
+        self._state.running = True
+        self._state.last_error = None
+        return self.status()
+
+    def stop_realtime(self) -> dict[str, object]:
+        # 停止操作必须可重复调用，方便前端在窗口关闭或用户重复点击时安全地收敛运行状态。
+        self._state.running = False
+        self._state.latency_ms = 0
+        self._state.last_error = None
+        return self.status()
+
     def environment(self) -> dict[str, object]:
         # 环境检测和运行状态分开暴露，避免 ffmpeg 这类依赖缺失影响状态轮询接口的稳定性。
         return self._environment_provider().as_payload()

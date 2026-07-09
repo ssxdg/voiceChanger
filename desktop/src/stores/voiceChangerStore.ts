@@ -45,7 +45,7 @@ type VoiceChangerState = {
   cudaAvailable: boolean | null
   cudaMessage: string
   environmentError: string | null
-  toggleRealtime: () => void
+  toggleRealtime: (client?: BackendClient) => Promise<void>
   loadBackendSnapshot: (client?: BackendClient) => Promise<void>
   loadModels: (client?: BackendClient) => Promise<void>
   loadSelectedModel: (modelPath: string, client?: BackendClient) => Promise<void>
@@ -90,9 +90,25 @@ export const useVoiceChangerStore = create<VoiceChangerState>()(
       cudaAvailable: null,
       cudaMessage: '等待 CUDA 检测',
       environmentError: null,
-      // 使用一个集中 action 切换状态，后续接入后端时只需要在这里串联启动/停止接口。
-      toggleRealtime: () => {
-        set((state) => ({ isRealtimeActive: !state.isRealtimeActive }))
+      toggleRealtime: async (client = backendClient) => {
+        try {
+          // 启停按钮以本地后端返回的状态为准，避免前端本地切换和后端真实运行状态不一致。
+          const status = get().isRealtimeActive ? await client.stopRealtime() : await client.startRealtime()
+
+          set({
+            backendConnected: true,
+            backendError: status.lastError,
+            isRealtimeActive: status.running,
+            latencyMs: status.latencyMs,
+            selectedModelName: status.selectedModel || '未选择模型',
+          })
+        } catch (error) {
+          // 启停失败时保留原运行态，只展示后端错误，方便用户先修复模型或本地服务后重试。
+          set({
+            backendConnected: false,
+            backendError: error instanceof Error ? error.message : '实时变声控制失败',
+          })
+        }
       },
       loadBackendSnapshot: async (client = backendClient) => {
         try {

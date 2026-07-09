@@ -122,6 +122,34 @@ class BackendServiceTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             service.load_model({"modelPath": "E:/LLM/bianshengqi/assets/weights/missing.pth"})
 
+    def test_realtime_start_and_stop_update_runtime_status(self):
+        service = BackendService(
+            model_catalog_provider=lambda: ModelCatalog(
+                [
+                    ModelItem(
+                        name="demo.pth",
+                        model_path="E:/LLM/bianshengqi/assets/weights/demo.pth",
+                        index_path="E:/LLM/bianshengqi/logs/demo/added_IVF_demo_v2.index",
+                    )
+                ]
+            )
+        )
+
+        service.load_model({"modelPath": "E:/LLM/bianshengqi/assets/weights/demo.pth"})
+        started = service.start_realtime()
+        stopped = service.stop_realtime()
+
+        self.assertEqual(started["running"], True)
+        self.assertEqual(started["configured"], True)
+        self.assertEqual(started["selectedModel"], "demo.pth")
+        self.assertEqual(stopped["running"], False)
+
+    def test_realtime_start_requires_selected_model(self):
+        service = BackendService()
+
+        with self.assertRaises(ValueError):
+            service.start_realtime()
+
     def test_environment_returns_dependency_payload(self):
         service = BackendService(
             environment_provider=lambda: EnvironmentStatus(

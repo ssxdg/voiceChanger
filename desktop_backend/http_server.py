@@ -47,7 +47,7 @@ class DesktopBackendHandler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:
         path = self.path.split("?", 1)[0]
-        if path not in {"/parameters", "/models/load"}:
+        if path not in {"/parameters", "/models/load", "/realtime/start", "/realtime/stop"}:
             self._write_json({"error": "接口不存在"}, HTTPStatus.NOT_FOUND)
             return
 
@@ -57,11 +57,15 @@ class DesktopBackendHandler(BaseHTTPRequestHandler):
             return
 
         try:
-            response = (
-                self.server.service.update_parameters(payload)
-                if path == "/parameters"
-                else self.server.service.load_model(payload)
-            )
+            # POST 路由统一返回最新运行状态或参数快照，前端可以直接用响应同步控制台。
+            if path == "/parameters":
+                response = self.server.service.update_parameters(payload)
+            elif path == "/models/load":
+                response = self.server.service.load_model(payload)
+            elif path == "/realtime/start":
+                response = self.server.service.start_realtime()
+            else:
+                response = self.server.service.stop_realtime()
         except (TypeError, ValueError) as error:
             self._write_json({"error": str(error) or "参数格式不正确"}, HTTPStatus.BAD_REQUEST)
             return

@@ -96,7 +96,9 @@ function DashboardPage() {
         <button
           className={isRealtimeActive ? 'primary-action is-active' : 'primary-action'}
           type="button"
-          onClick={toggleRealtime}
+          onClick={() => {
+            void toggleRealtime()
+          }}
         >
           {isRealtimeActive ? '停止变声' : '开始变声'}
         </button>
