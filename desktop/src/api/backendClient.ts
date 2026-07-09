@@ -64,11 +64,30 @@ type FetchTransport = (input: RequestInfo | URL, init?: RequestInit) => Promise<
 
 const defaultTransport: FetchTransport = (input, init) => fetch(input, init)
 
+type BackendErrorPayload = {
+  error?: unknown
+}
+
+async function readBackendErrorMessage(response: Response) {
+  try {
+    // 后端错误统一使用 JSON `{ error }`，优先透传这条中文消息，方便模型损坏等场景给出具体修复建议。
+    const payload = (await response.json()) as BackendErrorPayload
+
+    if (typeof payload.error === 'string' && payload.error.trim().length > 0) {
+      return payload.error
+    }
+  } catch {
+    // 旧接口或网络中断可能没有合法 JSON 错误体，此时继续使用桌面端统一兜底文案。
+  }
+
+  return '本地后端接口请求失败'
+}
+
 async function requestJson<T>(transport: FetchTransport, url: string, init?: RequestInit): Promise<T> {
   const response = await transport(url, init)
 
   if (!response.ok) {
-    throw new Error('本地后端接口请求失败')
+    throw new Error(await readBackendErrorMessage(response))
   }
 
   return response.json() as Promise<T>

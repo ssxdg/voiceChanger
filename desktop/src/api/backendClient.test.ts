@@ -171,4 +171,19 @@ describe('backendClient', () => {
 
     await expect(client.loadSnapshot()).rejects.toThrow('本地后端接口请求失败')
   })
+
+  it('后端返回 error 字段时透传中文错误', async () => {
+    const client = createBackendClient(
+      'http://127.0.0.1:6242',
+      async () =>
+        new Response(JSON.stringify({ error: '模型文件可能已损坏，请重新导入 .pth 模型' }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        }),
+    )
+
+    await expect(client.loadModel('E:/LLM/bianshengqi/assets/weights/broken.pth')).rejects.toThrow(
+      '模型文件可能已损坏，请重新导入 .pth 模型',
+    )
+  })
 })

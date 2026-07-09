@@ -341,6 +341,75 @@ describe('App', () => {
     expect(screen.getByText('请将 .pth 模型放入 assets/weights 后刷新模型列表')).toBeInTheDocument()
   })
 
+  it('模型加载失败时展示后端返回的中文错误', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input)
+        if (url.endsWith('/models/load')) {
+          return new Response(JSON.stringify({ error: '模型文件可能已损坏，请重新导入 .pth 模型' }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json; charset=utf-8' },
+          })
+        }
+
+        if (url.endsWith('/models')) {
+          return new Response(
+            JSON.stringify({
+              modelCount: 1,
+              models: [
+                {
+                  name: 'broken.pth',
+                  modelPath: 'E:/LLM/bianshengqi/assets/weights/broken.pth',
+                  indexPath: '',
+                  indexReady: false,
+                },
+              ],
+            }),
+            { status: 200 },
+          )
+        }
+
+        if (url.endsWith('/environment')) {
+          return new Response(
+            JSON.stringify({
+              ffmpeg: {
+                available: true,
+                path: 'C:/tools/ffmpeg/bin/ffmpeg.exe',
+                message: 'ffmpeg 已就绪',
+              },
+              cuda: {
+                available: true,
+                path: 'torch.cuda',
+                message: 'CUDA 已就绪',
+              },
+            }),
+            { status: 200 },
+          )
+        }
+
+        return new Response(
+          JSON.stringify({
+            running: false,
+            configured: false,
+            latencyMs: 0,
+            selectedModel: '',
+            lastError: null,
+          }),
+          { status: 200 },
+        )
+      }),
+    )
+
+    render(<App />)
+    fireEvent.click(screen.getByRole('link', { name: '模型管理' }))
+
+    await waitFor(() => expect(screen.getByText('broken.pth')).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: '使用模型 broken.pth' }))
+
+    await waitFor(() => expect(screen.getByText('模型文件可能已损坏，请重新导入 .pth 模型')).toBeInTheDocument())
+  })
+
   it('文件变声页可导入支持的音频文件', async () => {
     render(<App />)
     fireEvent.click(screen.getByRole('link', { name: '文件变声' }))
