@@ -291,6 +291,28 @@ h1 {
   font-size: 13px;
 }
 
+.compliance-panel {
+  border: 1px solid rgba(103, 232, 249, 0.3);
+  border-radius: 8px;
+  padding: 16px 18px;
+  background: rgba(14, 116, 144, 0.16);
+}
+
+.compliance-panel strong,
+.compliance-panel span {
+  display: block;
+}
+
+.compliance-panel strong {
+  color: #cffafe;
+}
+
+.compliance-panel span {
+  margin-top: 6px;
+  color: #a8b3c5;
+  font-size: 13px;
+}
+
 .model-list {
   display: grid;
   gap: 12px;

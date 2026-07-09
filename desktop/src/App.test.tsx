@@ -341,6 +341,14 @@ describe('App', () => {
     expect(screen.getByText('请将 .pth 模型放入 assets/weights 后刷新模型列表')).toBeInTheDocument()
   })
 
+  it('模型管理页展示授权声音模型合规提示', async () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('link', { name: '模型管理' }))
+
+    expect(screen.getByText('仅使用已授权的声音模型')).toBeInTheDocument()
+    expect(screen.getByText('请确认模型来源合法，并获得声音权利人或授权方许可后再用于变声。')).toBeInTheDocument()
+  })
+
   it('模型加载失败时展示后端返回的中文错误', async () => {
     vi.stubGlobal(
       'fetch',

@@ -419,6 +419,12 @@ function ModelsPage() {
       {modelListError ? <p className="error-text">{modelListError}</p> : null}
       {modelLoadError ? <p className="error-text">{modelLoadError}</p> : null}
 
+      {/* 模型管理是用户选择声音模型的入口，在这里固定提示授权要求，可以在加载或导入前降低误用风险。 */}
+      <section className="compliance-panel" aria-label="声音模型合规提示">
+        <strong>仅使用已授权的声音模型</strong>
+        <span>请确认模型来源合法，并获得声音权利人或授权方许可后再用于变声。</span>
+      </section>
+
       <section className="model-list" aria-label="本地模型列表">
         {modelItems.length === 0 ? (
           <div className="empty-panel">
